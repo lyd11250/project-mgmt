@@ -32,7 +32,12 @@ public class TenantLineHandlerImpl implements TenantLineHandler {
     public Expression getTenantId() {
         Long tenantId = 0L;
         try {
-            if (StpUtil.isLogin()) {
+            Long override = TenantContext.get();
+            if (override != null) {
+                // 1) 上下文覆盖值（登录前定位/超管跨租户/建租户播种）
+                tenantId = override;
+            } else if (StpUtil.isLogin()) {
+                // 2) 当前登录会话写入的租户
                 Object value = StpUtil.getSession().get(SESSION_TENANT_ID);
                 if (value != null) {
                     tenantId = Long.valueOf(value.toString());

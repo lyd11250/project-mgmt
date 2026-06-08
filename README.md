@@ -2,7 +2,7 @@
 
 多租户项目协作平台 — Vue3 前端 + Spring Boot 4 后端 + PostgreSQL（MyBatis-Plus 多租户）+ Sa-token 鉴权 + Redis。
 
-> 详细设计见 [技术方案.md](技术方案.md)。当前进度：**第 0 期脚手架**（可启动骨架）。
+> 详细设计见 [技术方案.md](技术方案.md)。当前进度：**第 1 期-A 认证权限基座**（登录 / RBAC / 用户与租户管理）。
 
 ## 技术栈
 
@@ -16,6 +16,16 @@
 - 用户与权限（Sa-token 鉴权、RBAC、多租户隔离）
 - 主数据管理（企业、人员、相关方）
 - 项目进度管理（项目、里程碑、进度）
+
+## 初始账号与登录
+
+- 首次启动时自动初始化「平台租户」与超级管理员（幂等，见 `PlatformSeeder`）。
+- 默认超管：**租户编码 `PLATFORM` / 用户名 `admin` / 密码 `admin123456`**，可用环境变量 `APP_SUPERADMIN_USERNAME`、`APP_SUPERADMIN_PASSWORD` 覆盖。**生产首次登录后务必修改默认密码。**
+- 登录采用 `租户编码 + 用户名 + 密码`（用户名在租户内唯一）。
+- 用户由管理员后台创建：超管在「租户管理」建租户并自动生成其租户管理员；租户管理员在「用户管理」建本租户普通用户并分配角色。
+- 角色：`SUPER_ADMIN`（跨租户，权限通配 `*`）/ `TENANT_ADMIN`（本租户全部）/ `USER`（只读）。
+
+主要接口：`POST /api/v1/auth/login`（开放）、`POST /api/v1/auth/logout`、`GET /api/v1/auth/me`、`/api/v1/users`、`/api/v1/roles`、`/api/v1/tenants`（仅超管）。
 
 ## 目录结构
 

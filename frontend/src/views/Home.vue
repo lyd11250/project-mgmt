@@ -2,7 +2,9 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ping } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const result = ref('')
 
 async function handlePing() {
@@ -17,8 +19,9 @@ async function handlePing() {
 
 <template>
   <el-card>
-    <h2>欢迎使用项目协作平台</h2>
-    <p>第 0 期脚手架已就绪。后续模块（用户与权限 / 主数据 / 项目进度）将分期实现。</p>
+    <h2>欢迎，{{ auth.user?.username }}</h2>
+    <p>当前角色：{{ auth.roles.join(', ') || '无' }}</p>
+    <p>第 1 期-A 认证权限基座已就绪：登录、RBAC、用户/租户管理。后续将实现主数据与项目进度。</p>
     <el-button type="primary" @click="handlePing">测试后端连通 (/api/v1/ping)</el-button>
     <p v-if="result">返回：{{ result }}</p>
   </el-card>

@@ -1,24 +1,40 @@
 import request from './request'
 
 export interface LoginParams {
+  tenantCode: string
   username: string
   password: string
 }
 
 export interface LoginResult {
+  tokenName: string
   token: string
 }
 
-/**
- * 登录（第 1 期实现后端接口，本期仅占位定义）。
- */
+export interface MeInfo {
+  userId: number
+  username: string
+  tenantId: number
+  roles: string[]
+  permissions: string[]
+}
+
+/** 登录：租户编码 + 用户名 + 密码。 */
 export function login(params: LoginParams) {
   return request.post<unknown, LoginResult>('/auth/login', params)
 }
 
-/**
- * 健康检查（开放接口，用于联调验证）。
- */
+/** 登出。 */
+export function logout() {
+  return request.post<unknown, void>('/auth/logout')
+}
+
+/** 当前登录用户信息（含角色与权限）。 */
+export function getMe() {
+  return request.get<unknown, MeInfo>('/auth/me')
+}
+
+/** 健康检查（开放接口）。 */
 export function ping() {
   return request.get<unknown, string>('/ping')
 }

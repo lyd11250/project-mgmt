@@ -83,6 +83,12 @@
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
+        <!-- 密码加密（BCrypt）：仅用 Spring Security 的加密工具，不引入完整安全框架 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
         <!-- Lombok + MapStruct（对象映射，省样板） -->
         <dependency>
             <groupId>org.projectlombok</groupId>
