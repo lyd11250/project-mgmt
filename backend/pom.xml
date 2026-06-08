@@ -73,9 +73,10 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Flyway（Spring Boot 4 起需用 starter 触发自动配置；flyway-core 单独引入不再生效） -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>

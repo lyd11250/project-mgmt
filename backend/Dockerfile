@@ -4,9 +4,9 @@ WORKDIR /app
 # 国内 Maven 镜像（阿里云），加速依赖下载
 COPY settings.xml /root/.m2/settings.xml
 COPY pom.xml .
-RUN mvn -q -s /root/.m2/settings.xml dependency:go-offline
+RUN mvn -s /root/.m2/settings.xml dependency:go-offline
 COPY src ./src
-RUN mvn -q -s /root/.m2/settings.xml -DskipTests package
+RUN mvn -s /root/.m2/settings.xml -DskipTests package
 
 # ---- 运行阶段 ----
 FROM eclipse-temurin:17-jre
