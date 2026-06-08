@@ -8,7 +8,7 @@
 
 - **前端**：Vue3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + Axios
 - **后端**：Spring Boot 4.0（JDK 17）+ MyBatis-Plus + Sa-token + Flyway
-- **存储**：PostgreSQL 15+、Redis 7+
+- **存储**：PostgreSQL 16+、Redis 7+
 - **部署**：Docker Compose（区分 dev / prod）
 
 ## 业务域（规划）
