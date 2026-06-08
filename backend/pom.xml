@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.github.lyd11250</groupId>
-    <artifactId>collab-platform</artifactId>
+    <artifactId>project-management</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>collab-platform</name>
+    <name>project-management</name>
     <description>多租户项目协作平台 - 后端</description>
 
     <properties>
@@ -116,7 +116,7 @@
     </dependencies>
 
     <build>
-        <finalName>collab-platform</finalName>
+        <finalName>project-management</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

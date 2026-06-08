@@ -5,13 +5,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${DB_NAME:-collab}
-      POSTGRES_USER: ${DB_USER:-collab}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-collab}
+      POSTGRES_DB: ${DB_NAME:-project}
+      POSTGRES_USER: ${DB_USER:-project}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-project}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-collab}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-project}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,9 +28,9 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: ${DB_NAME:-collab}
-      DB_USER: ${DB_USER:-collab}
-      DB_PASSWORD: ${DB_PASSWORD:-collab}
+      DB_NAME: ${DB_NAME:-project}
+      DB_USER: ${DB_USER:-project}
+      DB_PASSWORD: ${DB_PASSWORD:-project}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}

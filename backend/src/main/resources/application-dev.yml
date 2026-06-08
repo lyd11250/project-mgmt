@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:collab}
-    username: ${DB_USER:collab}
-    password: ${DB_PASSWORD:collab}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:project}
+    username: ${DB_USER:project}
+    password: ${DB_PASSWORD:project}
     driver-class-name: org.postgresql.Driver
   data:
     redis:
@@ -14,4 +14,4 @@ spring:
 logging:
   level:
     root: info
-    com.github.lyd11250: debug
+    com.github.lyd11250.project: debug
