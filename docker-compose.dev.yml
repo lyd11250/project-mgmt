@@ -1,0 +1,21 @@
+# 开发/测试覆盖（测试机）：暴露各服务端口便于直连调试
+# 用法：docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+
+  frontend:
+    ports:
+      - "8088:80"

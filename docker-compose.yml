@@ -1,0 +1,50 @@
+# 基础编排：PostgreSQL + Redis + 后端 + 前端
+# 按环境叠加 docker-compose.dev.yml 或 docker-compose.prod.yml 使用
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-collab}
+      POSTGRES_USER: ${DB_USER:-collab}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-collab}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-collab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-collab}
+      DB_USER: ${DB_USER:-collab}
+      DB_PASSWORD: ${DB_PASSWORD:-collab}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:
