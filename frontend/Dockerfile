@@ -1,6 +1,8 @@
 # ---- 构建阶段 ----
 FROM node:24-alpine AS build
 WORKDIR /app
+# 国内 npm 镜像（npmmirror），加速依赖下载
+RUN npm config set registry https://registry.npmmirror.com
 COPY package*.json ./
 RUN npm ci
 COPY . .
