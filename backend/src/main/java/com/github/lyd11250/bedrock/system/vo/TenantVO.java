@@ -18,6 +18,10 @@ public class TenantVO {
 
     private Integer status;
 
+    private Long packageId;
+
+    private String packageName;
+
     private String contact;
 
     private LocalDateTime createdAt;

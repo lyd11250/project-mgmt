@@ -1,6 +1,7 @@
 package com.github.lyd11250.bedrock.system.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -14,6 +15,9 @@ public class TenantCreateDTO {
 
     @NotBlank(message = "租户编码不能为空")
     private String code;
+
+    @NotNull(message = "套餐不能为空")
+    private Long packageId;
 
     @NotBlank(message = "管理员用户名不能为空")
     private String adminUsername;

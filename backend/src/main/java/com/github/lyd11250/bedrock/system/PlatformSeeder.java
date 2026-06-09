@@ -45,6 +45,7 @@ public class PlatformSeeder implements ApplicationRunner {
         tenant.setName("平台");
         tenant.setCode(RbacConstants.PLATFORM_TENANT_CODE);
         tenant.setStatus(1);
+        tenant.setPackageId(RbacConstants.PACKAGE_FULL_ID);
         tenantMapper.insert(tenant);
 
         seedService.seedPlatform(RbacConstants.PLATFORM_TENANT_ID, superAdminUsername, superAdminPassword);

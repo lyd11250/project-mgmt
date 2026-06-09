@@ -22,9 +22,12 @@ public class TenantLineHandlerImpl implements TenantLineHandler {
     /** 会话中存放租户 ID 的键。 */
     public static final String SESSION_TENANT_ID = "tenantId";
 
-    /** 不参与租户隔离的表（租户表本身、Flyway 历史表）。 */
+    /** 不参与租户隔离的表（租户表本身、全局菜单/套餐目录、Flyway 历史表）。 */
     private static final Set<String> IGNORE_TABLES = Set.of(
             "tenant",
+            "sys_menu",
+            "sys_package",
+            "sys_package_menu",
             "flyway_schema_history"
     );
 

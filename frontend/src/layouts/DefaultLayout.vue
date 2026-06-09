@@ -1,25 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { resetDynamicRoutes } from '@/router'
+import SideMenu from '@/components/SideMenu.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 
-interface MenuItem {
-  index: string
-  label: string
-  show: boolean
-}
-
-const menus = computed<MenuItem[]>(() => [
-  { index: '/home', label: '首页', show: true },
-  { index: '/system/users', label: '用户管理', show: auth.hasPermission('user:list') },
-  { index: '/system/tenants', label: '租户管理', show: auth.hasRole('SUPER_ADMIN') },
-])
-
 async function handleLogout() {
   await auth.logout()
+  resetDynamicRoutes()
   router.replace('/login')
 }
 </script>
@@ -27,12 +17,14 @@ async function handleLogout() {
 <template>
   <el-container class="layout">
     <el-aside width="220px" class="aside">
-      <div class="logo">项目协作平台</div>
+      <div class="logo">Bedrock 平台</div>
       <el-menu router :default-active="$route.path" class="menu" background-color="#001529"
         text-color="#fff" active-text-color="#409eff">
-        <template v-for="m in menus" :key="m.index">
-          <el-menu-item v-if="m.show" :index="m.index">{{ m.label }}</el-menu-item>
-        </template>
+        <el-menu-item index="/home">
+          <el-icon><HomeFilled /></el-icon>
+          <span>首页</span>
+        </el-menu-item>
+        <SideMenu :items="auth.menus" />
       </el-menu>
     </el-aside>
     <el-container>

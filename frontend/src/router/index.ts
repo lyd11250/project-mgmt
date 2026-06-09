@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import type { MenuNode } from '@/api/menu'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -10,6 +11,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    name: 'layout',
     component: () => import('@/layouts/DefaultLayout.vue'),
     redirect: '/home',
     children: [
@@ -18,18 +20,6 @@ const routes: RouteRecordRaw[] = [
         name: 'home',
         component: () => import('@/views/Home.vue'),
         meta: { title: '首页' },
-      },
-      {
-        path: 'system/users',
-        name: 'users',
-        component: () => import('@/views/system/UserList.vue'),
-        meta: { title: '用户管理', permission: 'user:list' },
-      },
-      {
-        path: 'system/tenants',
-        name: 'tenants',
-        component: () => import('@/views/system/TenantList.vue'),
-        meta: { title: '租户管理', role: 'SUPER_ADMIN' },
       },
     ],
   },
@@ -40,7 +30,52 @@ const router = createRouter({
   routes,
 })
 
-// 全局前置守卫：登录校验 + 角色/权限校验
+// 后端菜单 component 字符串（如 system/UserList）→ 视图组件
+const viewModules = import.meta.glob('../views/**/*.vue')
+function resolveComponent(component?: string) {
+  if (!component) return undefined
+  return viewModules[`../views/${component}.vue`]
+}
+
+// 已注册的动态路由名，便于登出时清理
+const dynamicNames: string[] = []
+let dynamicAdded = false
+
+/** 由导航菜单树挂载动态路由到 layout 下（仅 C 型页面）。 */
+function setupDynamicRoutes(menus: MenuNode[]) {
+  const walk = (nodes: MenuNode[]) => {
+    for (const node of nodes) {
+      if (node.type === 'C' && node.path && node.component) {
+        const name = `menu-${node.id}`
+        const comp = resolveComponent(node.component)
+        if (comp && !router.hasRoute(name)) {
+          router.addRoute('layout', {
+            path: node.path,
+            name,
+            component: comp,
+            meta: { title: node.name, permission: node.perm },
+          })
+          dynamicNames.push(name)
+        }
+      }
+      if (node.children?.length) {
+        walk(node.children)
+      }
+    }
+  }
+  walk(menus)
+  dynamicAdded = true
+}
+
+/** 登出时清理动态路由，便于换账号后按新菜单重建。 */
+export function resetDynamicRoutes() {
+  for (const name of dynamicNames.splice(0)) {
+    if (router.hasRoute(name)) router.removeRoute(name)
+  }
+  dynamicAdded = false
+}
+
+// 全局前置守卫：登录校验 + 动态路由挂载 + 角色/权限校验
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.public) {
@@ -49,13 +84,18 @@ router.beforeEach(async (to) => {
   if (!auth.token) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
-  // 有令牌但用户信息未加载（如刷新页面）→ 先拉取
+  // 有令牌但用户信息未加载（如刷新页面）→ 先拉取用户与菜单
   if (!auth.user) {
     try {
       await auth.fetchMe()
     } catch {
       return { name: 'login', query: { redirect: to.fullPath } }
     }
+  }
+  // 首次进入：按菜单挂载动态路由，再重新解析当前导航
+  if (!dynamicAdded) {
+    setupDynamicRoutes(auth.menus)
+    return to.fullPath
   }
   if (to.meta.role && !auth.hasRole(to.meta.role as string)) {
     return { name: 'home' }

@@ -50,7 +50,7 @@ docker-compose.yml(.dev/.prod)  容器编排
 ### 4.1 分层与对象
 - **分层**：`Controller → Service → Mapper(MyBatis-Plus)`，贫血模型。不引入 BO。
 - **DTO**：接口入参（`xxxDTO`，放 `dto/`）；**VO**：接口出参（`xxxVO`，放 `vo/`）；**Entity**：持久层对象（放 `entity/`，`@TableName` 指定表名）。三者**手动互转**（当前在 Service 内写 `toVO` 私有方法，见 `UserService`），不要在 Entity 上直接出入参。
-- **实体**继承 `common.BaseEntity`（含 `id / tenantId / createdBy / createdAt / updatedBy / updatedAt / deleted`），子类加 `@EqualsAndHashCode(callSuper = true)`。**不要在实体里重复声明这些公共字段**。
+- **实体**继承 `common.BaseEntity`（含 `id / tenantId / 审计 / deleted`），子类加 `@EqualsAndHashCode(callSuper = true)`。**不要在实体里重复声明这些公共字段**。**全局表**（不带 `tenant_id`，如 `sys_menu` / `sys_package`）继承 `common.GlobalBaseEntity`（无 `tenantId`）；关联表若无 `updated_*` 列则显式声明字段（参照 `SysUserRole` / `SysRoleMenu`）。
 
 ### 4.2 统一响应
 - Controller 一律返回 `Result<T>`：成功 `Result.ok(data)` / `Result.ok()`，失败抛异常（见下）。**不要手工 new 错误 Result**。
@@ -62,10 +62,12 @@ docker-compose.yml(.dev/.prod)  容器编排
 - **新建业务表必须带 `tenant_id` 列**（`tenant` 表本身和 `flyway_schema_history` 例外，已在 `IGNORE_TABLES`）。新增不参与隔离的表时，记得加入 `IGNORE_TABLES`。
 - 登录前定位用户、超管跨租户、建租户播种等场景，用 `TenantContext.runAs(tenantId, () -> {...})` 临时覆盖租户。取值优先级：`TenantContext 覆盖值 > Sa-token 会话 > 0`。
 
-### 4.4 鉴权（Sa-token）
-- 方法级权限：`@SaCheckPermission("user:create")`；角色级：`@SaCheckRole("SUPER_ADMIN")`。
-- **权限码集中在 `RbacConstants`** 维护：新增功能要在 `TENANT_PERMISSIONS` 登记权限码（格式 `资源:动作`，如 `project:create`），必要时纳入 `USER_PERMISSIONS` 默认集。超管权限为通配 `*`。
-- 角色码：`SUPER_ADMIN`（跨租户）/ `TENANT_ADMIN`（本租户全部）/ `USER`（只读）。
+### 4.4 鉴权（Sa-token，套餐化 RBAC）
+- 方法级权限：`@SaCheckPermission("system:user:create")`；角色级：`@SaCheckRole("SUPER_ADMIN")`。
+- **权限码 DB 驱动，不再硬编码**：权限码即全局菜单 `sys_menu.perm`，格式 `模块:资源:动作`（如 `system:user:create`）。新增功能 → 在 Flyway 种子（或菜单管理页）注册菜单/按钮 perm → 纳入相应套餐 `sys_package_menu`。`RbacConstants` 仅保留角色码、套餐固定 id、通配 `*`。
+- **鉴权判定**（`StpInterfaceImpl`）：用户权限 = 角色分配的菜单 perm（`sys_role_menu`）∩ 租户套餐边界（`tenant.package_id → sys_package_menu`）；含 `SUPER_ADMIN` 角色者通配 `*`，绕过边界。
+- 角色码：`SUPER_ADMIN`（跨租户）/ `TENANT_ADMIN`（本租户套餐内全部）/ `USER`（只读页面）。
+- 三层模型与菜单树详见 [功能设计.md](功能设计.md) 第 2 节。
 
 ### 4.5 持久层 & 查询
 - 用 MyBatis-Plus `Wrappers.lambdaQuery()` 构建条件，分页用 `Page.of(current, size)`，返回 `IPage<VO>`（用 `page.convert(this::toVO)`）。
@@ -139,7 +141,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 若用户切换了模型，按以下顺序快速进入状态：
 1. **先读五份文档**：本 `CLAUDE.md`（规范与约束）→ `技术方案.md`（技术选型与架构）→ `功能设计.md`（业务域与功能设计，含 RBAC 套餐模型）→ `开发进度.md`（计划与当前进度）→ `README.md`（启动方式与账号）。
-2. **读一个完整样板域**：把系统能力域（当前 `auth` 包，A2 后为 `system`）从 `controller → service → entity → dto → vo → mapper` 通读一遍（推荐 `UserController` + `UserService`），它是所有模块的分层范式。再看 `common/` 与 `config/` 理解响应体、异常、多租户、审计、鉴权的统一机制。
+2. **读一个完整样板域**：把系统能力域（`system` 包）从 `controller → service → entity → dto → vo → mapper` 通读一遍（推荐 `UserController` + `UserService`），它是所有模块的分层范式。再看 `common/` 与 `config/` 理解响应体、异常、多租户、审计、鉴权的统一机制。
 3. **对照第 2 节关键约束**，尤其牢记：本机无 Docker、国内源、Boot4 starter 模块化、基础包路径。
 4. **看 `git log --oneline`** 了解演进脉络。
-5. 动手前，复杂任务先用计划/待办拆解，新业务域严格仿照 `auth` 的分层与命名落地。
+5. 动手前，复杂任务先用计划/待办拆解，新业务域严格仿照 `system` 的分层与命名落地。

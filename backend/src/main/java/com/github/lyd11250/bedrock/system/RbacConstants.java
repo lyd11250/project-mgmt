@@ -1,10 +1,9 @@
 package com.github.lyd11250.bedrock.system;
 
-import java.util.List;
-import java.util.Map;
-
 /**
- * RBAC 常量：角色码、权限码与默认绑定。
+ * RBAC 常量：角色码、套餐、通配权限。
+ *
+ * <p>权限码不再硬编码于此——已迁移到 DB 全局菜单 {@code sys_menu.perm}（见 Flyway V2）。
  */
 public final class RbacConstants {
 
@@ -23,20 +22,12 @@ public final class RbacConstants {
     public static final String ROLE_TENANT_ADMIN = "TENANT_ADMIN";
     public static final String ROLE_USER = "USER";
 
-    /** 通配权限（超级管理员）。 */
+    /** 通配权限（超级管理员，绕过套餐边界与菜单分配）。 */
     public static final String PERMISSION_ALL = "*";
 
-    /** 租户内权限目录：code → 名称。 */
-    public static final Map<String, String> TENANT_PERMISSIONS = Map.ofEntries(
-            Map.entry("user:list", "用户查看"),
-            Map.entry("user:create", "用户创建"),
-            Map.entry("user:update", "用户编辑"),
-            Map.entry("user:delete", "用户删除"),
-            Map.entry("user:resetPwd", "重置密码"),
-            Map.entry("user:assignRole", "分配角色"),
-            Map.entry("role:list", "角色查看")
-    );
-
-    /** 普通用户默认拥有的权限码（本期仅只读查看）。 */
-    public static final List<String> USER_PERMISSIONS = List.of("user:list", "role:list");
+    // 内置套餐固定 id（见 Flyway V2 种子）
+    /** 基础版：用户管理 + 角色管理。新建租户默认套餐。 */
+    public static final Long PACKAGE_BASIC_ID = 1L;
+    /** 全功能：全部系统菜单。平台租户套餐。 */
+    public static final Long PACKAGE_FULL_ID = 2L;
 }

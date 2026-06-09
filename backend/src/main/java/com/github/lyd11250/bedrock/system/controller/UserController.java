@@ -32,7 +32,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @SaCheckPermission("user:list")
+    @SaCheckPermission("system:user:list")
     public Result<IPage<UserVO>> page(
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "20") long size,
@@ -41,34 +41,34 @@ public class UserController {
     }
 
     @PostMapping
-    @SaCheckPermission("user:create")
+    @SaCheckPermission("system:user:create")
     public Result<Long> create(@Valid @RequestBody UserCreateDTO dto) {
         return Result.ok(userService.create(dto));
     }
 
     @PutMapping("/{id}")
-    @SaCheckPermission("user:update")
+    @SaCheckPermission("system:user:update")
     public Result<Void> update(@PathVariable Long id, @RequestBody UserUpdateDTO dto) {
         userService.update(id, dto);
         return Result.ok();
     }
 
     @DeleteMapping("/{id}")
-    @SaCheckPermission("user:delete")
+    @SaCheckPermission("system:user:delete")
     public Result<Void> delete(@PathVariable Long id) {
         userService.delete(id);
         return Result.ok();
     }
 
     @PutMapping("/{id}/password")
-    @SaCheckPermission("user:resetPwd")
+    @SaCheckPermission("system:user:resetPwd")
     public Result<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordDTO dto) {
         userService.resetPassword(id, dto.getPassword());
         return Result.ok();
     }
 
     @PutMapping("/{id}/roles")
-    @SaCheckPermission("user:assignRole")
+    @SaCheckPermission("system:user:assignRole")
     public Result<Void> assignRoles(@PathVariable Long id, @RequestBody AssignRolesDTO dto) {
         userService.assignRoles(id, dto.getRoleIds());
         return Result.ok();

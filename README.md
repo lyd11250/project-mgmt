@@ -5,7 +5,7 @@
 技术栈：Vue3 前端 + Spring Boot 4 后端 + PostgreSQL（MyBatis-Plus 多租户）+ Sa-token 鉴权 + Redis。
 
 > 设计文档：技术选型与架构见 [技术方案.md](技术方案.md)，系统功能设计见 [功能设计.md](功能设计.md)，开发计划与进度见 [开发进度.md](开发进度.md)，协作规范见 [CLAUDE.md](CLAUDE.md)。
-> 当前进度：第 1 期-A 认证基座 ✅，下一步 **第 1 期-A2 基座完善与重命名**（届时基础包 `…project`→`…bedrock`、`auth`→`system`）。
+> 当前进度：第 1 期-A2 基座完善与重命名 ✅（已更名为 Bedrock，基础包 `…bedrock`、系统能力在 `system` 模块，RBAC 升级为「全局菜单 + 套餐订阅 + 租户内 RBAC」三层模型）。
 
 ## 技术栈
 

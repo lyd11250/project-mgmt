@@ -7,15 +7,17 @@ import {
   type LoginParams,
   type MeInfo,
 } from '@/api/auth'
+import { getNav, type MenuNode } from '@/api/menu'
 import { TOKEN_KEY } from '@/api/request'
 
 /**
- * 鉴权状态：令牌 + 当前用户（角色/权限）。令牌持久化到 localStorage，
- * 用户信息刷新后由 `/auth/me` 重新拉取。
+ * 鉴权状态：令牌 + 当前用户（角色/权限）+ 导航菜单。令牌持久化到 localStorage，
+ * 用户信息与菜单刷新后由 `/auth/me`、`/system/menus/nav` 重新拉取。
  */
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string>(localStorage.getItem(TOKEN_KEY) ?? '')
   const user = ref<MeInfo | null>(null)
+  const menus = ref<MenuNode[]>([])
 
   const roles = computed(() => user.value?.roles ?? [])
   const permissions = computed(() => user.value?.permissions ?? [])
@@ -31,8 +33,10 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchMe()
   }
 
+  /** 拉取当前用户信息与导航菜单。 */
   async function fetchMe() {
     user.value = await getMe()
+    menus.value = await getNav()
   }
 
   async function logout() {
@@ -43,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     token.value = ''
     user.value = null
+    menus.value = []
     localStorage.removeItem(TOKEN_KEY)
   }
 
@@ -54,5 +59,8 @@ export const useAuthStore = defineStore('auth', () => {
     return permissions.value.includes('*') || permissions.value.includes(permission)
   }
 
-  return { token, user, roles, permissions, setToken, login, fetchMe, logout, hasRole, hasPermission }
+  return {
+    token, user, menus, roles, permissions,
+    setToken, login, fetchMe, logout, hasRole, hasPermission,
+  }
 })

@@ -106,7 +106,7 @@ async function handleDelete(row: UserItem) {
       <el-input v-model="query.username" placeholder="用户名" clearable class="search"
         @keyup.enter="load" @clear="load" />
       <el-button type="primary" @click="load">查询</el-button>
-      <el-button v-permission="'user:create'" type="success" @click="openCreate">新建用户</el-button>
+      <el-button v-permission="'system:user:create'" type="success" @click="openCreate">新建用户</el-button>
     </div>
 
     <el-table v-loading="loading" :data="list" border stripe>
@@ -126,13 +126,13 @@ async function handleDelete(row: UserItem) {
       <el-table-column prop="createdAt" label="创建时间" width="180" />
       <el-table-column label="操作" width="260">
         <template #default="{ row }">
-          <el-button v-permission="'user:assignRole'" link type="primary" @click="openAssign(row)">
+          <el-button v-permission="'system:user:assignRole'" link type="primary" @click="openAssign(row)">
             分配角色
           </el-button>
-          <el-button v-permission="'user:resetPwd'" link type="primary" @click="handleReset(row)">
+          <el-button v-permission="'system:user:resetPwd'" link type="primary" @click="handleReset(row)">
             重置密码
           </el-button>
-          <el-button v-permission="'user:delete'" link type="danger" @click="handleDelete(row)">
+          <el-button v-permission="'system:user:delete'" link type="danger" @click="handleDelete(row)">
             删除
           </el-button>
         </template>

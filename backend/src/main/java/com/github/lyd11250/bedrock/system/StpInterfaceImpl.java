@@ -1,25 +1,36 @@
 package com.github.lyd11250.bedrock.system;
 
 import cn.dev33.satoken.stp.StpInterface;
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.github.lyd11250.bedrock.system.entity.SysPermission;
+import com.github.lyd11250.bedrock.config.TenantLineHandlerImpl;
+import com.github.lyd11250.bedrock.system.entity.SysMenu;
+import com.github.lyd11250.bedrock.system.entity.SysPackageMenu;
 import com.github.lyd11250.bedrock.system.entity.SysRole;
-import com.github.lyd11250.bedrock.system.entity.SysRolePermission;
+import com.github.lyd11250.bedrock.system.entity.SysRoleMenu;
 import com.github.lyd11250.bedrock.system.entity.SysUserRole;
-import com.github.lyd11250.bedrock.system.mapper.SysPermissionMapper;
+import com.github.lyd11250.bedrock.system.entity.Tenant;
+import com.github.lyd11250.bedrock.system.mapper.SysMenuMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysPackageMenuMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysRoleMapper;
-import com.github.lyd11250.bedrock.system.mapper.SysRolePermissionMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysRoleMenuMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysUserRoleMapper;
+import com.github.lyd11250.bedrock.system.mapper.TenantMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Sa-token 鉴权数据源：按当前登录用户提供角色码与权限码。
  *
- * <p>查询时会话已写入 {@code tenantId}，多租户插件自动按租户过滤。
+ * <p>权限码 = 角色分配的菜单 perm ∩ 租户套餐边界；超管（含 SUPER_ADMIN 角色）通配 {@code *}。
+ * 查询时会话已写入 {@code tenantId}，{@code sys_role_menu} 由多租户插件自动按租户过滤；
+ * {@code sys_menu / sys_package_menu / tenant} 为全局表，不参与过滤。
  */
 @Component
 @RequiredArgsConstructor
@@ -27,8 +38,10 @@ public class StpInterfaceImpl implements StpInterface {
 
     private final SysUserRoleMapper userRoleMapper;
     private final SysRoleMapper roleMapper;
-    private final SysRolePermissionMapper rolePermissionMapper;
-    private final SysPermissionMapper permissionMapper;
+    private final SysRoleMenuMapper roleMenuMapper;
+    private final SysMenuMapper menuMapper;
+    private final SysPackageMenuMapper packageMenuMapper;
+    private final TenantMapper tenantMapper;
 
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
@@ -36,32 +49,68 @@ public class StpInterfaceImpl implements StpInterface {
         if (roleIds.isEmpty()) {
             return Collections.emptyList();
         }
-        List<Long> permIds = rolePermissionMapper.selectList(
-                        Wrappers.<SysRolePermission>lambdaQuery().in(SysRolePermission::getRoleId, roleIds))
-                .stream().map(SysRolePermission::getPermissionId).distinct().toList();
-        if (permIds.isEmpty()) {
+        List<String> roleCodes = roleCodesOf(roleIds);
+        if (roleCodes.contains(RbacConstants.ROLE_SUPER_ADMIN)) {
+            return List.of(RbacConstants.PERMISSION_ALL);
+        }
+
+        // 角色分配的菜单 perm
+        List<Long> assignedMenuIds = roleMenuMapper.selectList(
+                        Wrappers.<SysRoleMenu>lambdaQuery().in(SysRoleMenu::getRoleId, roleIds))
+                .stream().map(SysRoleMenu::getMenuId).distinct().toList();
+        if (assignedMenuIds.isEmpty()) {
             return Collections.emptyList();
         }
-        return permissionMapper.selectList(
-                        Wrappers.<SysPermission>lambdaQuery().in(SysPermission::getId, permIds))
-                .stream().map(SysPermission::getCode).distinct().toList();
+        Set<String> assignedPerms = permsOfMenus(assignedMenuIds);
+
+        // 与套餐边界取交集
+        assignedPerms.retainAll(boundaryPermsOfCurrentTenant());
+        return List.copyOf(assignedPerms);
     }
 
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
         List<Long> roleIds = roleIdsOf(loginId);
-        if (roleIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return roleMapper.selectList(
-                        Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds))
-                .stream().map(SysRole::getCode).distinct().toList();
+        return roleIds.isEmpty() ? Collections.emptyList() : roleCodesOf(roleIds);
     }
+
+    // ---- 内部 ----
 
     private List<Long> roleIdsOf(Object loginId) {
         Long userId = Long.valueOf(loginId.toString());
         return userRoleMapper.selectList(
                         Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getUserId, userId))
                 .stream().map(SysUserRole::getRoleId).distinct().toList();
+    }
+
+    private List<String> roleCodesOf(List<Long> roleIds) {
+        return roleMapper.selectList(Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds))
+                .stream().map(SysRole::getCode).distinct().toList();
+    }
+
+    /** 菜单 id 集合 → 非空 perm 集合。 */
+    private Set<String> permsOfMenus(List<Long> menuIds) {
+        if (menuIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return menuMapper.selectList(Wrappers.<SysMenu>lambdaQuery().in(SysMenu::getId, menuIds))
+                .stream().map(SysMenu::getPerm).filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+    }
+
+    /** 当前租户套餐圈定的 perm 集合（package_id 为空则为空集）。 */
+    private Set<String> boundaryPermsOfCurrentTenant() {
+        Object tid = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
+        if (tid == null) {
+            return Collections.emptySet();
+        }
+        Tenant tenant = tenantMapper.selectById(Long.valueOf(tid.toString()));
+        if (tenant == null || tenant.getPackageId() == null) {
+            return Collections.emptySet();
+        }
+        List<Long> packageMenuIds = packageMenuMapper.selectList(
+                        Wrappers.<SysPackageMenu>lambdaQuery().eq(SysPackageMenu::getPackageId, tenant.getPackageId()))
+                .stream().map(SysPackageMenu::getMenuId).distinct().toList();
+        return permsOfMenus(packageMenuIds);
     }
 }

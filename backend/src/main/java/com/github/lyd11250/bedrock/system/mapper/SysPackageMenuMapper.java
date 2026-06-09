@@ -1,9 +1,9 @@
 package com.github.lyd11250.bedrock.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.github.lyd11250.bedrock.system.entity.SysPermission;
+import com.github.lyd11250.bedrock.system.entity.SysPackageMenu;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface SysPermissionMapper extends BaseMapper<SysPermission> {
+public interface SysPackageMenuMapper extends BaseMapper<SysPackageMenu> {
 }

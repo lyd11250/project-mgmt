@@ -6,6 +6,8 @@ export interface TenantItem {
   name: string
   code: string
   status: number
+  packageId?: number
+  packageName?: string
   contact?: string
   createdAt: string
 }
@@ -13,6 +15,7 @@ export interface TenantItem {
 export interface TenantCreateParams {
   name: string
   code: string
+  packageId: number
   adminUsername: string
   adminPassword: string
   contact?: string

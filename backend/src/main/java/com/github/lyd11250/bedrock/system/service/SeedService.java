@@ -1,14 +1,17 @@
 package com.github.lyd11250.bedrock.system.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.lyd11250.bedrock.system.RbacConstants;
-import com.github.lyd11250.bedrock.system.entity.SysPermission;
+import com.github.lyd11250.bedrock.system.entity.SysMenu;
+import com.github.lyd11250.bedrock.system.entity.SysPackageMenu;
 import com.github.lyd11250.bedrock.system.entity.SysRole;
-import com.github.lyd11250.bedrock.system.entity.SysRolePermission;
+import com.github.lyd11250.bedrock.system.entity.SysRoleMenu;
 import com.github.lyd11250.bedrock.system.entity.SysUser;
 import com.github.lyd11250.bedrock.system.entity.SysUserRole;
-import com.github.lyd11250.bedrock.system.mapper.SysPermissionMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysMenuMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysPackageMenuMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysRoleMapper;
-import com.github.lyd11250.bedrock.system.mapper.SysRolePermissionMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysRoleMenuMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysUserMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysUserRoleMapper;
 import com.github.lyd11250.bedrock.config.TenantContext;
@@ -17,36 +20,33 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 种子/初始化逻辑：为「平台租户」与「新建租户」播种角色、权限、管理员。
+ * 种子/初始化逻辑：为「平台租户」与「新建租户」播种角色与管理员。
  *
- * <p>所有写入均在 {@link TenantContext#runAs} 指定的租户上下文中执行，
- * 使多租户插件把数据落到目标租户。
+ * <p>角色权限来自「角色↔菜单分配」（{@code sys_role_menu}），菜单范围受租户套餐圈定；
+ * 不再每租户复制权限目录。所有写入均在 {@link TenantContext#runAs} 指定的租户上下文中执行。
  */
 @Service
 @RequiredArgsConstructor
 public class SeedService {
 
     private final SysRoleMapper roleMapper;
-    private final SysPermissionMapper permissionMapper;
-    private final SysRolePermissionMapper rolePermissionMapper;
+    private final SysRoleMenuMapper roleMenuMapper;
+    private final SysPackageMenuMapper packageMenuMapper;
+    private final SysMenuMapper menuMapper;
     private final SysUserMapper userMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final BCryptPasswordEncoder passwordEncoder;
 
     /**
-     * 为平台租户播种：SUPER_ADMIN 角色 + 通配权限 + 超管账号。
+     * 为平台租户播种：SUPER_ADMIN 角色（通配权限，无需绑菜单）+ 超管账号。
      */
     @Transactional
     public void seedPlatform(Long platformTenantId, String adminUsername, String adminRawPassword) {
         TenantContext.runAs(platformTenantId, () -> {
-            SysPermission all = createPermission(RbacConstants.PERMISSION_ALL, "全部权限");
             Long superRoleId = createRole(RbacConstants.ROLE_SUPER_ADMIN, "超级管理员");
-            bindRolePermission(superRoleId, all.getId());
             Long userId = createUser(adminUsername, adminRawPassword);
             bindUserRole(userId, superRoleId);
             return null;
@@ -54,28 +54,24 @@ public class SeedService {
     }
 
     /**
-     * 为新建租户播种：TENANT_ADMIN / USER 角色 + 权限目录 + 租户管理员账号。
+     * 为新建租户播种：TENANT_ADMIN（套餐内全部菜单）/ USER（套餐内只读页面）角色 + 租户管理员账号。
      */
     @Transactional
-    public void seedTenant(Long tenantId, String adminUsername, String adminRawPassword) {
+    public void seedTenant(Long tenantId, Long packageId, String adminUsername, String adminRawPassword) {
         TenantContext.runAs(tenantId, () -> {
-            // 权限目录
-            Map<String, Long> permIds = new java.util.HashMap<>();
-            for (Map.Entry<String, String> e : RbacConstants.TENANT_PERMISSIONS.entrySet()) {
-                SysPermission p = createPermission(e.getKey(), e.getValue());
-                permIds.put(e.getKey(), p.getId());
-            }
-            // 租户管理员：拥有全部权限
+            List<Long> packageMenuIds = menuIdsOfPackage(packageId);
+
+            // 租户管理员：套餐内全部菜单
             Long adminRoleId = createRole(RbacConstants.ROLE_TENANT_ADMIN, "租户管理员");
-            for (Long pid : permIds.values()) {
-                bindRolePermission(adminRoleId, pid);
+            for (Long menuId : packageMenuIds) {
+                bindRoleMenu(adminRoleId, menuId);
             }
-            // 普通用户：仅只读
+            // 普通用户：仅套餐内 C 型页面（只读）
             Long userRoleId = createRole(RbacConstants.ROLE_USER, "普通用户");
-            for (String code : RbacConstants.USER_PERMISSIONS) {
-                bindRolePermission(userRoleId, permIds.get(code));
+            for (Long menuId : pageMenuIds(packageMenuIds)) {
+                bindRoleMenu(userRoleId, menuId);
             }
-            // 创建租户管理员账号
+            // 租户管理员账号
             Long uid = createUser(adminUsername, adminRawPassword);
             bindUserRole(uid, adminRoleId);
             return null;
@@ -92,19 +88,11 @@ public class SeedService {
         return role.getId();
     }
 
-    public SysPermission createPermission(String code, String name) {
-        SysPermission p = new SysPermission();
-        p.setCode(code);
-        p.setName(name);
-        permissionMapper.insert(p);
-        return p;
-    }
-
-    public void bindRolePermission(Long roleId, Long permissionId) {
-        SysRolePermission rp = new SysRolePermission();
-        rp.setRoleId(roleId);
-        rp.setPermissionId(permissionId);
-        rolePermissionMapper.insert(rp);
+    public void bindRoleMenu(Long roleId, Long menuId) {
+        SysRoleMenu rm = new SysRoleMenu();
+        rm.setRoleId(roleId);
+        rm.setMenuId(menuId);
+        roleMenuMapper.insert(rm);
     }
 
     public Long createUser(String username, String rawPassword) {
@@ -121,5 +109,27 @@ public class SeedService {
         ur.setUserId(userId);
         ur.setRoleId(roleId);
         userRoleMapper.insert(ur);
+    }
+
+    // ---- 内部 ----
+
+    /** 套餐圈定的全部菜单 id。 */
+    private List<Long> menuIdsOfPackage(Long packageId) {
+        if (packageId == null) {
+            return List.of();
+        }
+        return packageMenuMapper.selectList(
+                        Wrappers.<SysPackageMenu>lambdaQuery().eq(SysPackageMenu::getPackageId, packageId))
+                .stream().map(SysPackageMenu::getMenuId).distinct().toList();
+    }
+
+    /** 从菜单 id 集合中筛出 C 型页面菜单（供普通用户只读）。 */
+    private List<Long> pageMenuIds(List<Long> menuIds) {
+        if (menuIds.isEmpty()) {
+            return List.of();
+        }
+        return menuMapper.selectList(Wrappers.<SysMenu>lambdaQuery()
+                        .in(SysMenu::getId, menuIds).eq(SysMenu::getType, "C"))
+                .stream().map(SysMenu::getId).toList();
     }
 }

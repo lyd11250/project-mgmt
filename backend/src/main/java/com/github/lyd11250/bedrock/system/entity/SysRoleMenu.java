@@ -12,40 +12,26 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 租户（系统订阅方，隔离根）。不带 {@code tenant_id}，故不继承 {@link com.github.lyd11250.bedrock.common.BaseEntity}。
+ * 角色-菜单分配（租户内 RBAC）。带 {@code tenant_id}，无 {@code updated_*} 列，故不继承基类。
  */
 @Data
-@TableName("tenant")
-public class Tenant implements Serializable {
+@TableName("sys_role_menu")
+public class SysRoleMenu implements Serializable {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    private String name;
+    private Long tenantId;
 
-    private String code;
+    private Long roleId;
 
-    /** 状态：1 启用，0 停用。 */
-    private Integer status;
-
-    /** 订阅的套餐 id（圈定可用功能边界）。 */
-    private Long packageId;
-
-    private LocalDateTime expireAt;
-
-    private String contact;
+    private Long menuId;
 
     @TableField(fill = FieldFill.INSERT)
     private Long createdBy;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 
     @TableLogic
     @TableField(select = false)

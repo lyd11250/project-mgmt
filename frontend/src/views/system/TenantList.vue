@@ -2,11 +2,13 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createTenant, pageTenants, type TenantItem } from '@/api/tenant'
+import { listPackages, type PackageItem } from '@/api/package'
 
 const loading = ref(false)
 const list = ref<TenantItem[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10 })
+const packages = ref<PackageItem[]>([])
 
 async function load() {
   loading.value = true
@@ -19,14 +21,21 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  packages.value = await listPackages()
+  await load()
+})
 
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
-const form = reactive({ name: '', code: '', contact: '', adminUsername: '', adminPassword: '' })
+const form = reactive({
+  name: '', code: '', packageId: undefined as number | undefined,
+  contact: '', adminUsername: '', adminPassword: '',
+})
 const rules: FormRules = {
   name: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
+  packageId: [{ required: true, message: '请选择套餐', trigger: 'change' }],
   adminUsername: [{ required: true, message: '请输入管理员用户名', trigger: 'blur' }],
   adminPassword: [{ required: true, message: '请输入管理员密码', trigger: 'blur' }],
 }
@@ -34,6 +43,7 @@ const rules: FormRules = {
 function openCreate() {
   form.name = ''
   form.code = ''
+  form.packageId = undefined
   form.contact = ''
   form.adminUsername = ''
   form.adminPassword = ''
@@ -44,7 +54,7 @@ async function submitCreate() {
   if (!createRef.value) return
   await createRef.value.validate(async (valid) => {
     if (!valid) return
-    await createTenant({ ...form })
+    await createTenant({ ...form, packageId: form.packageId! })
     ElMessage.success('租户创建成功，已生成其管理员账号')
     createVisible.value = false
     await load()
@@ -61,6 +71,7 @@ async function submitCreate() {
     <el-table v-loading="loading" :data="list" border stripe>
       <el-table-column prop="name" label="租户名称" />
       <el-table-column prop="code" label="租户编码" />
+      <el-table-column prop="packageName" label="套餐" width="120" />
       <el-table-column prop="contact" label="联系人" />
       <el-table-column label="状态" width="90">
         <template #default="{ row }">
@@ -83,6 +94,11 @@ async function submitCreate() {
         </el-form-item>
         <el-form-item label="租户编码" prop="code">
           <el-input v-model="form.code" placeholder="登录时使用，唯一" />
+        </el-form-item>
+        <el-form-item label="套餐" prop="packageId">
+          <el-select v-model="form.packageId" placeholder="选择套餐" class="full">
+            <el-option v-for="p in packages" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="联系人">
           <el-input v-model="form.contact" />
@@ -110,5 +126,8 @@ async function submitCreate() {
 .pager {
   margin-top: 12px;
   justify-content: flex-end;
+}
+.full {
+  width: 100%;
 }
 </style>
