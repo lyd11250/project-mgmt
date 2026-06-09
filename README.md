@@ -1,8 +1,11 @@
-# 项目协作平台
+# Bedrock — SaaS 平台基座
 
-多租户项目协作平台 — Vue3 前端 + Spring Boot 4 后端 + PostgreSQL（MyBatis-Plus 多租户）+ Sa-token 鉴权 + Redis。
+多租户 **SaaS 平台基座**：只提供 SaaS 必备的系统能力（**租户 / 套餐 / RBAC / 菜单 / 鉴权 / 多租户隔离**）；具体租户业务功能由上层业务模块（`biz/*`）扩展，**不属于基座**。
 
-> 详细设计见 [技术方案.md](技术方案.md)。当前进度：**第 1 期-A 认证权限基座**（登录 / RBAC / 用户与租户管理）。
+技术栈：Vue3 前端 + Spring Boot 4 后端 + PostgreSQL（MyBatis-Plus 多租户）+ Sa-token 鉴权 + Redis。
+
+> 设计文档：技术选型与架构见 [技术方案.md](技术方案.md)，系统功能设计见 [功能设计.md](功能设计.md)，开发计划与进度见 [开发进度.md](开发进度.md)，协作规范见 [CLAUDE.md](CLAUDE.md)。
+> 当前进度：第 1 期-A 认证基座 ✅，下一步 **第 1 期-A2 基座完善与重命名**（届时基础包 `…project`→`…bedrock`、`auth`→`system`）。
 
 ## 技术栈
 
@@ -11,18 +14,20 @@
 - **存储**：PostgreSQL 16+、Redis 7+
 - **部署**：Docker Compose（区分 dev / prod）
 
-## 业务域（规划）
+## 基座能力
 
-- 用户与权限（Sa-token 鉴权、RBAC、多租户隔离）
-- 主数据管理（企业、人员、相关方）
-- 项目进度管理（项目、里程碑、进度）
+- **租户管理**：租户（系统订阅方）、套餐订阅
+- **RBAC**：用户、角色、菜单/权限、角色↔菜单分配
+- **鉴权**：Sa-token 登录态 + 注解式角色/权限校验
+- **多租户隔离**：MyBatis-Plus 插件按 `tenant_id` 自动隔离，业务代码无感
+
+> 上层业务功能不内置，按 `biz/<module>/` 扩展，接入方式见 [功能设计.md](功能设计.md) 第 3 节。
 
 ## 初始账号与登录
 
 - 首次启动时自动初始化「平台租户」与超级管理员（幂等，见 `PlatformSeeder`）。
 - 默认超管：**租户编码 `PLATFORM` / 用户名 `admin` / 密码 `admin123456`**，可用环境变量 `APP_SUPERADMIN_USERNAME`、`APP_SUPERADMIN_PASSWORD` 覆盖。**生产首次登录后务必修改默认密码。**
 - 登录采用 `租户编码 + 用户名 + 密码`（用户名在租户内唯一）。
-- 用户由管理员后台创建：超管在「租户管理」建租户并自动生成其租户管理员；租户管理员在「用户管理」建本租户普通用户并分配角色。
 - 角色：`SUPER_ADMIN`（跨租户，权限通配 `*`）/ `TENANT_ADMIN`（本租户全部）/ `USER`（只读）。
 
 主要接口：`POST /api/v1/auth/login`（开放）、`POST /api/v1/auth/logout`、`GET /api/v1/auth/me`、`/api/v1/users`、`/api/v1/roles`、`/api/v1/tenants`（仅超管）。
@@ -30,10 +35,10 @@
 ## 目录结构
 
 ```
-backend/    Spring Boot 后端（common/config/auth/org/project/system）
-frontend/   Vue3 前端（api/stores/router/layouts/views）
+backend/    Spring Boot 后端（common / config / system〔当前 auth〕）
+frontend/   Vue3 前端（api / stores / router / layouts / views）
 docker-compose.yml(.dev/.prod)  容器编排
-技术方案.md  技术设计文档
+技术方案.md / 功能设计.md / 开发进度.md / CLAUDE.md  文档
 ```
 
 ## 环境
@@ -51,7 +56,7 @@ docker-compose.yml(.dev/.prod)  容器编排
 ```bash
 cd backend
 # 可用环境变量覆盖：DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD/REDIS_HOST/REDIS_PORT
-SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw -s settings.xml spring-boot:run
 # 验证：GET http://localhost:8080/api/v1/ping  →  {"code":0,"message":"成功","data":"pong"}
 ```
 
