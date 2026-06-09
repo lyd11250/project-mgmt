@@ -9,6 +9,8 @@ export interface TenantItem {
   packageId?: string
   packageName?: string
   contact?: string
+  /** 订阅到期时间；空表示永久。 */
+  expireAt?: string
   createdAt: string
 }
 
@@ -19,6 +21,7 @@ export interface TenantCreateParams {
   adminUsername: string
   adminPassword: string
   contact?: string
+  expireAt?: string
 }
 
 export function pageTenants(params: { page?: number; size?: number }) {

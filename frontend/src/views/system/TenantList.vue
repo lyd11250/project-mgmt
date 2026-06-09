@@ -31,6 +31,7 @@ const createRef = ref<FormInstance>()
 const form = reactive({
   name: '', code: '', packageId: undefined as string | undefined,
   contact: '', adminUsername: '', adminPassword: '',
+  expireAt: '' as string,
 })
 const rules: FormRules = {
   name: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
@@ -47,6 +48,7 @@ function openCreate() {
   form.contact = ''
   form.adminUsername = ''
   form.adminPassword = ''
+  form.expireAt = ''
   createVisible.value = true
 }
 
@@ -54,7 +56,11 @@ async function submitCreate() {
   if (!createRef.value) return
   await createRef.value.validate(async (valid) => {
     if (!valid) return
-    await createTenant({ ...form, packageId: form.packageId! })
+    await createTenant({
+      ...form,
+      packageId: form.packageId!,
+      expireAt: form.expireAt || undefined,
+    })
     ElMessage.success('租户创建成功，已生成其管理员账号')
     createVisible.value = false
     await load()
@@ -80,6 +86,9 @@ async function submitCreate() {
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="到期时间" width="180">
+        <template #default="{ row }">{{ row.expireAt ?? '永久' }}</template>
+      </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="180" />
     </el-table>
 
@@ -102,6 +111,10 @@ async function submitCreate() {
         </el-form-item>
         <el-form-item label="联系人">
           <el-input v-model="form.contact" />
+        </el-form-item>
+        <el-form-item label="到期时间">
+          <el-date-picker v-model="form.expireAt" type="datetime" class="full"
+            placeholder="留空表示永久" value-format="YYYY-MM-DDTHH:mm:ss" />
         </el-form-item>
         <el-divider>租户管理员</el-divider>
         <el-form-item label="管理员账号" prop="adminUsername">

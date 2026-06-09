@@ -28,6 +28,7 @@ public class TenantLineHandlerImpl implements TenantLineHandler {
             "sys_menu",
             "sys_package",
             "sys_package_menu",
+            "sys_package_quota",
             "flyway_schema_history"
     );
 

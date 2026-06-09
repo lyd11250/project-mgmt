@@ -6,6 +6,8 @@ export interface PackageItem {
   code: string
   status: number
   remark?: string
+  /** 配额（键值模型）：quota_key → 上限值，-1 表示不限。 */
+  quotas?: Record<string, number>
 }
 
 export interface PackageParams {
@@ -13,6 +15,7 @@ export interface PackageParams {
   code: string
   status?: number
   remark?: string
+  quotas?: Record<string, number>
 }
 
 export function listPackages() {

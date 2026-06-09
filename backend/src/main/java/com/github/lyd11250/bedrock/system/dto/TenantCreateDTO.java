@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * 创建租户入参（超级管理员）：建租户并自动创建其租户管理员账号。
  */
@@ -26,4 +28,7 @@ public class TenantCreateDTO {
     private String adminPassword;
 
     private String contact;
+
+    /** 订阅到期时间；null 表示永久。 */
+    private LocalDateTime expireAt;
 }

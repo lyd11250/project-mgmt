@@ -30,10 +30,25 @@ onMounted(load)
 const editVisible = ref(false)
 const editRef = ref<FormInstance>()
 const editing = ref<PackageItem | null>(null)
-const form = reactive({ name: '', code: '', remark: '' })
+// maxUsers 为 null 表示不限（提交时落为 -1）
+const form = reactive<{ name: string; code: string; remark: string; maxUsers: number | null }>({
+  name: '',
+  code: '',
+  remark: '',
+  maxUsers: null,
+})
 const rules: FormRules = {
   name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入套餐编码', trigger: 'blur' }],
+}
+
+/** -1 / 未配置 视为不限，表单用 null 表示。 */
+function quotaToForm(value?: number): number | null {
+  return value == null || value < 0 ? null : value
+}
+
+function buildQuotas(): Record<string, number> {
+  return { max_users: form.maxUsers == null ? -1 : form.maxUsers }
 }
 
 function openCreate() {
@@ -41,6 +56,7 @@ function openCreate() {
   form.name = ''
   form.code = ''
   form.remark = ''
+  form.maxUsers = null
   editVisible.value = true
 }
 
@@ -49,6 +65,7 @@ function openEdit(row: PackageItem) {
   form.name = row.name
   form.code = row.code
   form.remark = row.remark ?? ''
+  form.maxUsers = quotaToForm(row.quotas?.max_users)
   editVisible.value = true
 }
 
@@ -56,16 +73,28 @@ async function submitEdit() {
   if (!editRef.value) return
   await editRef.value.validate(async (valid) => {
     if (!valid) return
+    const payload = {
+      name: form.name,
+      code: form.code,
+      remark: form.remark,
+      quotas: buildQuotas(),
+    }
     if (editing.value) {
-      await updatePackage(editing.value.id, { ...form })
+      await updatePackage(editing.value.id, payload)
       ElMessage.success('已更新套餐')
     } else {
-      await createPackage({ ...form })
+      await createPackage(payload)
       ElMessage.success('已创建套餐')
     }
     editVisible.value = false
     await load()
   })
+}
+
+/** 列表展示用：-1/未配置 显示“不限”。 */
+function displayMaxUsers(row: PackageItem): string {
+  const v = row.quotas?.max_users
+  return v == null || v < 0 ? '不限' : String(v)
 }
 
 async function handleDelete(row: PackageItem) {
@@ -112,6 +141,9 @@ async function submitAssignMenus() {
     <el-table v-loading="loading" :data="list" border stripe>
       <el-table-column prop="name" label="套餐名称" />
       <el-table-column prop="code" label="套餐编码" />
+      <el-table-column label="最大用户数" width="110">
+        <template #default="{ row }">{{ displayMaxUsers(row) }}</template>
+      </el-table-column>
       <el-table-column prop="remark" label="说明" />
       <el-table-column label="操作" width="240">
         <template #default="{ row }">
@@ -136,6 +168,10 @@ async function submitAssignMenus() {
         </el-form-item>
         <el-form-item label="编码" prop="code">
           <el-input v-model="form.code" :disabled="!!editing" placeholder="全局唯一，如 PRO" />
+        </el-form-item>
+        <el-form-item label="最大用户数">
+          <el-input-number v-model="form.maxUsers" :min="0" controls-position="right" placeholder="留空=不限" />
+          <span class="hint">留空表示不限</span>
         </el-form-item>
         <el-form-item label="说明">
           <el-input v-model="form.remark" type="textarea" />
@@ -162,5 +198,10 @@ async function submitAssignMenus() {
 <style scoped>
 .toolbar {
   margin-bottom: 12px;
+}
+.hint {
+  margin-left: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 </style>

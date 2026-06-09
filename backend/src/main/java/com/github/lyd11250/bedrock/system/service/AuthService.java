@@ -13,9 +13,12 @@ import com.github.lyd11250.bedrock.common.BusinessException;
 import com.github.lyd11250.bedrock.common.ResultCode;
 import com.github.lyd11250.bedrock.config.TenantContext;
 import com.github.lyd11250.bedrock.config.TenantLineHandlerImpl;
+import com.github.lyd11250.bedrock.system.RbacConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 /**
  * 认证服务：登录 / 登出 / 当前用户。
@@ -37,6 +40,12 @@ public class AuthService {
                 Wrappers.<Tenant>lambdaQuery().eq(Tenant::getCode, dto.getTenantCode()));
         if (tenant == null || (tenant.getStatus() != null && tenant.getStatus() == 0)) {
             throw new BusinessException(ResultCode.BAD_REQUEST.getCode(), "租户编码、用户名或密码错误");
+        }
+        // 订阅过期校验（平台租户豁免）
+        if (!RbacConstants.PLATFORM_TENANT_ID.equals(tenant.getId())
+                && tenant.getExpireAt() != null
+                && tenant.getExpireAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ResultCode.FORBIDDEN.getCode(), "租户订阅已过期，请联系平台续费");
         }
 
         // 在目标租户上下文中查用户

@@ -3,6 +3,7 @@ package com.github.lyd11250.bedrock.system.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.lyd11250.bedrock.system.QuotaKeys;
 import com.github.lyd11250.bedrock.system.dto.UserCreateDTO;
 import com.github.lyd11250.bedrock.system.dto.UserUpdateDTO;
 import com.github.lyd11250.bedrock.system.entity.SysRole;
@@ -34,6 +35,7 @@ public class UserService {
     private final SysUserRoleMapper userRoleMapper;
     private final SysRoleMapper roleMapper;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final QuotaService quotaService;
 
     public IPage<UserVO> page(long current, long size, String username) {
         Page<SysUser> page = userMapper.selectPage(Page.of(current, size),
@@ -50,6 +52,8 @@ public class UserService {
         if (exists != null && exists > 0) {
             throw new BusinessException("用户名已存在");
         }
+        long currentCount = userMapper.selectCount(Wrappers.<SysUser>lambdaQuery());
+        quotaService.checkAndAssert(QuotaKeys.MAX_USERS, currentCount + 1);
         SysUser user = new SysUser();
         user.setUsername(dto.getUsername());
         user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));

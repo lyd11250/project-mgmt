@@ -56,6 +56,7 @@ public class TenantService {
         tenant.setStatus(1);
         tenant.setPackageId(dto.getPackageId());
         tenant.setContact(dto.getContact());
+        tenant.setExpireAt(dto.getExpireAt());
         tenantMapper.insert(tenant);
 
         seedService.seedTenant(tenant.getId(), dto.getPackageId(), dto.getAdminUsername(), dto.getAdminPassword());
@@ -71,6 +72,7 @@ public class TenantService {
         vo.setPackageId(t.getPackageId());
         vo.setPackageName(t.getPackageId() == null ? null : packageNameOf.apply(t.getPackageId()));
         vo.setContact(t.getContact());
+        vo.setExpireAt(t.getExpireAt());
         vo.setCreatedAt(t.getCreatedAt());
         return vo;
     }

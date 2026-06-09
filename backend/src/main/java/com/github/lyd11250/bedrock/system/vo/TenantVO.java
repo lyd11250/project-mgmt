@@ -24,5 +24,8 @@ public class TenantVO {
 
     private String contact;
 
+    /** 订阅到期时间；null 表示永久。 */
+    private LocalDateTime expireAt;
+
     private LocalDateTime createdAt;
 }
