@@ -69,13 +69,21 @@ npm run dev      # http://localhost:5173 （/api 自动代理到 8080）
 
 ## 一键部署（Docker Compose）
 
+> **前端部署模式**：前端**不在容器内构建**，而是在本机 `npm run build` 出 `frontend/dist/`，连同代码一起上传到测试机/云服务器，由 `nginx:alpine` 容器只读挂载 `dist` 与 `nginx.conf` 托管（反代 `/api` 到后端）。后端仍走容器内 Maven 构建。这样彻底规避跨平台 `npm ci` 的 lock 漂移问题。
+
 ```bash
-# 测试机（开发/测试）
+# 1) 本机：构建前端产物（后端无需，本机/测试机均可编译；运行需容器）
+cd frontend && npm install && npm run build   # 生成 frontend/dist/
+
+# 2) 上传整个仓库（含 frontend/dist）到测试机/云服务器后，在其上执行：
+
+# 测试机（开发/测试）：后端镜像构建，前端挂载 dist
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 # 云服务器（生产）：先 cp .env.example .env 并修改密码
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
+- 前端代码改动后，需**重新 `npm run build` 并上传 `dist`**，容器无需 rebuild，`docker compose ... up -d` 重启 frontend 即可（或 nginx 直接读新文件）。
 - dev：前端 `http://<测试机>:8088`，后端 `:8080`，PG `:5432`，Redis `:6379` 均暴露。
 - prod：仅前端对外 `:80`（经 Nginx 反代 `/api` 到后端），DB/Redis 不暴露。
