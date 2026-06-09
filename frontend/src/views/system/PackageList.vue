@@ -94,8 +94,8 @@ async function openAssignMenus(row: PackageItem) {
 async function submitAssignMenus() {
   if (!assigning.value || !treeRef.value) return
   const menuIds = [
-    ...(treeRef.value.getCheckedKeys() as number[]),
-    ...(treeRef.value.getHalfCheckedKeys() as number[]),
+    ...(treeRef.value.getCheckedKeys() as string[]),
+    ...(treeRef.value.getHalfCheckedKeys() as string[]),
   ]
   await assignPackageMenus(assigning.value.id, menuIds)
   ElMessage.success('已更新套餐菜单')

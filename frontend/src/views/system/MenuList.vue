@@ -25,9 +25,9 @@ async function load() {
 onMounted(load)
 
 // 扁平化为父级下拉选项（含层级缩进）
-interface Option { value: number; label: string }
+interface Option { value: string; label: string }
 const parentOptions = computed<Option[]>(() => {
-  const opts: Option[] = [{ value: 0, label: '顶级' }]
+  const opts: Option[] = [{ value: '0', label: '顶级' }]
   const walk = (nodes: MenuNode[], depth: number) => {
     for (const n of nodes) {
       if (n.type !== 'F') {
@@ -45,9 +45,9 @@ const typeLabel = (t: MenuType) => ({ M: '目录', C: '菜单', F: '按钮' })[t
 // ---- 新建 / 编辑 ----
 const editVisible = ref(false)
 const editRef = ref<FormInstance>()
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const form = reactive({
-  parentId: 0,
+  parentId: '0',
   type: 'C' as MenuType,
   name: '',
   path: '',
@@ -62,7 +62,7 @@ const rules: FormRules = {
   name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
 }
 
-function reset(parentId = 0) {
+function reset(parentId = '0') {
   editingId.value = null
   form.parentId = parentId
   form.type = 'C'
@@ -76,7 +76,7 @@ function reset(parentId = 0) {
 }
 
 function openCreate() {
-  reset(0)
+  reset('0')
   editVisible.value = true
 }
 
@@ -87,7 +87,7 @@ function openCreateChild(row: MenuNode) {
 
 function openEdit(row: MenuNode) {
   editingId.value = row.id
-  form.parentId = row.parentId ?? 0
+  form.parentId = row.parentId ?? '0'
   form.type = row.type
   form.name = row.name
   form.path = row.path ?? ''
@@ -140,7 +140,8 @@ async function handleDelete(row: MenuNode) {
       <el-table-column prop="sort" label="排序" width="70" />
       <el-table-column label="操作" width="240">
         <template #default="{ row }">
-          <el-button v-permission="'system:menu:create'" link type="primary" @click="openCreateChild(row)">
+          <el-button v-if="row.type !== 'F'" v-permission="'system:menu:create'" link type="primary"
+            @click="openCreateChild(row)">
             新增子项
           </el-button>
           <el-button v-permission="'system:menu:update'" link type="primary" @click="openEdit(row)">

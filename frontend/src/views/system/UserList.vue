@@ -40,7 +40,7 @@ onMounted(async () => {
 // ---- 新建用户 ----
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
-const createForm = reactive({ username: '', password: '', roleIds: [] as number[] })
+const createForm = reactive({ username: '', password: '', roleIds: [] as string[] })
 const createRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
@@ -66,7 +66,7 @@ async function submitCreate() {
 
 // ---- 分配角色 ----
 const roleVisible = ref(false)
-const roleForm = reactive({ userId: 0, roleIds: [] as number[] })
+const roleForm = reactive({ userId: '', roleIds: [] as string[] })
 
 function openAssign(row: UserItem) {
   roleForm.userId = row.id

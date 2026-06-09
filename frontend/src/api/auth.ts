@@ -12,9 +12,9 @@ export interface LoginResult {
 }
 
 export interface MeInfo {
-  userId: number
+  userId: string
   username: string
-  tenantId: number
+  tenantId: string
   roles: string[]
   permissions: string[]
 }

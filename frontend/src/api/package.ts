@@ -1,7 +1,7 @@
 import request from './request'
 
 export interface PackageItem {
-  id: number
+  id: string
   name: string
   code: string
   status: number
@@ -19,22 +19,22 @@ export function listPackages() {
   return request.get<unknown, PackageItem[]>('/system/packages')
 }
 
-export function getPackageMenus(id: number) {
-  return request.get<unknown, number[]>(`/system/packages/${id}/menus`)
+export function getPackageMenus(id: string) {
+  return request.get<unknown, string[]>(`/system/packages/${id}/menus`)
 }
 
 export function createPackage(data: PackageParams) {
-  return request.post<unknown, number>('/system/packages', data)
+  return request.post<unknown, string>('/system/packages', data)
 }
 
-export function updatePackage(id: number, data: PackageParams) {
+export function updatePackage(id: string, data: PackageParams) {
   return request.put<unknown, void>(`/system/packages/${id}`, data)
 }
 
-export function deletePackage(id: number) {
+export function deletePackage(id: string) {
   return request.delete<unknown, void>(`/system/packages/${id}`)
 }
 
-export function assignPackageMenus(id: number, menuIds: number[]) {
+export function assignPackageMenus(id: string, menuIds: string[]) {
   return request.put<unknown, void>(`/system/packages/${id}/menus`, { menuIds })
 }

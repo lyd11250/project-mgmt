@@ -1,7 +1,7 @@
 import request from './request'
 
 export interface Role {
-  id: number
+  id: string
   code: string
   name: string
 }
@@ -17,22 +17,22 @@ export function listRoles() {
 }
 
 export function createRole(data: RoleParams) {
-  return request.post<unknown, number>('/roles', data)
+  return request.post<unknown, string>('/roles', data)
 }
 
-export function updateRole(id: number, data: RoleParams) {
+export function updateRole(id: string, data: RoleParams) {
   return request.put<unknown, void>(`/roles/${id}`, data)
 }
 
-export function deleteRole(id: number) {
+export function deleteRole(id: string) {
   return request.delete<unknown, void>(`/roles/${id}`)
 }
 
 /** 角色已分配的菜单 id 列表。 */
-export function getRoleMenus(id: number) {
-  return request.get<unknown, number[]>(`/roles/${id}/menus`)
+export function getRoleMenus(id: string) {
+  return request.get<unknown, string[]>(`/roles/${id}/menus`)
 }
 
-export function assignRoleMenus(id: number, menuIds: number[]) {
+export function assignRoleMenus(id: string, menuIds: string[]) {
   return request.put<unknown, void>(`/roles/${id}/menus`, { menuIds })
 }

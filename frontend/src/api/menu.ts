@@ -3,8 +3,8 @@ import request from './request'
 export type MenuType = 'M' | 'C' | 'F'
 
 export interface MenuNode {
-  id: number
-  parentId: number
+  id: string
+  parentId: string
   type: MenuType
   name: string
   path?: string
@@ -18,7 +18,7 @@ export interface MenuNode {
 }
 
 export interface MenuParams {
-  parentId?: number
+  parentId?: string
   type: MenuType
   name: string
   path?: string
@@ -46,13 +46,13 @@ export function getMenuTree() {
 }
 
 export function createMenu(data: MenuParams) {
-  return request.post<unknown, number>('/system/menus', data)
+  return request.post<unknown, string>('/system/menus', data)
 }
 
-export function updateMenu(id: number, data: MenuParams) {
+export function updateMenu(id: string, data: MenuParams) {
   return request.put<unknown, void>(`/system/menus/${id}`, data)
 }
 
-export function deleteMenu(id: number) {
+export function deleteMenu(id: string) {
   return request.delete<unknown, void>(`/system/menus/${id}`)
 }

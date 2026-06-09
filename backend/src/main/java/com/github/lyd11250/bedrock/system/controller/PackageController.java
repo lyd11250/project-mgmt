@@ -1,7 +1,9 @@
 package com.github.lyd11250.bedrock.system.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.github.lyd11250.bedrock.common.Result;
+import com.github.lyd11250.bedrock.system.RbacConstants;
 import com.github.lyd11250.bedrock.system.dto.AssignMenusDTO;
 import com.github.lyd11250.bedrock.system.dto.PackageDTO;
 import com.github.lyd11250.bedrock.system.service.PackageService;
@@ -20,10 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 套餐管理接口（平台超管）。
+ * 套餐管理接口（平台超管）。套餐与 sys_menu 同为全局表，整体仅超管可用。
  */
 @RestController
 @RequestMapping("/api/v1/system/packages")
+@SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
 @RequiredArgsConstructor
 public class PackageController {
 

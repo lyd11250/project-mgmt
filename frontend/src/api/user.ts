@@ -1,7 +1,11 @@
 import request from './request'
 import type { Role } from './role'
 
-/** MyBatis-Plus 分页结果。 */
+/**
+ * MyBatis-Plus 分页结果。
+ * 注意：后端雪花主键(Long)以字符串下发以避免 JS 精度丢失，故各实体 id 为 string；
+ * total/current/size 为原始 long/int，仍是数字。
+ */
 export interface PageResult<T> {
   records: T[]
   total: number
@@ -10,10 +14,10 @@ export interface PageResult<T> {
 }
 
 export interface UserItem {
-  id: number
+  id: string
   username: string
   status: number
-  personId?: number
+  personId?: string
   roles: Role[]
   createdAt: string
 }
@@ -21,8 +25,8 @@ export interface UserItem {
 export interface UserCreateParams {
   username: string
   password: string
-  personId?: number
-  roleIds?: number[]
+  personId?: string
+  roleIds?: string[]
 }
 
 export function pageUsers(params: { page?: number; size?: number; username?: string }) {
@@ -30,21 +34,21 @@ export function pageUsers(params: { page?: number; size?: number; username?: str
 }
 
 export function createUser(data: UserCreateParams) {
-  return request.post<unknown, number>('/users', data)
+  return request.post<unknown, string>('/users', data)
 }
 
-export function updateUser(id: number, data: { status?: number; personId?: number }) {
+export function updateUser(id: string, data: { status?: number; personId?: string }) {
   return request.put<unknown, void>(`/users/${id}`, data)
 }
 
-export function deleteUser(id: number) {
+export function deleteUser(id: string) {
   return request.delete<unknown, void>(`/users/${id}`)
 }
 
-export function resetPassword(id: number, password: string) {
+export function resetPassword(id: string, password: string) {
   return request.put<unknown, void>(`/users/${id}/password`, { password })
 }
 
-export function assignRoles(id: number, roleIds: number[]) {
+export function assignRoles(id: string, roleIds: string[]) {
   return request.put<unknown, void>(`/users/${id}/roles`, { roleIds })
 }

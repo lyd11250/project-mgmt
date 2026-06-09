@@ -29,7 +29,7 @@ onMounted(async () => {
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
 const form = reactive({
-  name: '', code: '', packageId: undefined as number | undefined,
+  name: '', code: '', packageId: undefined as string | undefined,
   contact: '', adminUsername: '', adminPassword: '',
 })
 const rules: FormRules = {

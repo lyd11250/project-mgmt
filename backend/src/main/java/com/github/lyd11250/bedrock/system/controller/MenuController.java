@@ -1,7 +1,9 @@
 package com.github.lyd11250.bedrock.system.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.github.lyd11250.bedrock.common.Result;
+import com.github.lyd11250.bedrock.system.RbacConstants;
 import com.github.lyd11250.bedrock.system.dto.MenuDTO;
 import com.github.lyd11250.bedrock.system.service.MenuService;
 import com.github.lyd11250.bedrock.system.vo.MenuVO;
@@ -41,19 +43,24 @@ public class MenuController {
         return Result.ok(menuService.assignableTree());
     }
 
+    // 菜单为全局表（影响所有租户），其增删改查仅平台超管可用——
+    // 用 @SaCheckRole 结构性兜底，防止 perm 经套餐泄漏给租户后越权改全局数据。
     @GetMapping
+    @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
     @SaCheckPermission("system:menu:list")
     public Result<List<MenuVO>> tree() {
         return Result.ok(menuService.tree());
     }
 
     @PostMapping
+    @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
     @SaCheckPermission("system:menu:create")
     public Result<Long> create(@Valid @RequestBody MenuDTO dto) {
         return Result.ok(menuService.create(dto));
     }
 
     @PutMapping("/{id}")
+    @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
     @SaCheckPermission("system:menu:update")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody MenuDTO dto) {
         menuService.update(id, dto);
@@ -61,6 +68,7 @@ public class MenuController {
     }
 
     @DeleteMapping("/{id}")
+    @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
     @SaCheckPermission("system:menu:delete")
     public Result<Void> delete(@PathVariable Long id) {
         menuService.delete(id);

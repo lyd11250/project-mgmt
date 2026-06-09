@@ -92,8 +92,8 @@ async function openAssignMenus(row: Role) {
 async function submitAssignMenus() {
   if (!assigningRole.value || !treeRef.value) return
   const menuIds = [
-    ...(treeRef.value.getCheckedKeys() as number[]),
-    ...(treeRef.value.getHalfCheckedKeys() as number[]),
+    ...(treeRef.value.getCheckedKeys() as string[]),
+    ...(treeRef.value.getHalfCheckedKeys() as string[]),
   ]
   await assignRoleMenus(assigningRole.value.id, menuIds)
   ElMessage.success('已更新菜单权限')
