@@ -1,6 +1,6 @@
 spring:
   application:
-    name: project-management
+    name: saas-bedrock
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   flyway:

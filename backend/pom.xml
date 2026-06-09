@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.github.lyd11250</groupId>
-    <artifactId>project-management</artifactId>
+    <artifactId>saas-bedrock</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>project-management</name>
-    <description>多租户项目协作平台 - 后端</description>
+    <name>saas-bedrock</name>
+    <description>Bedrock - 多租户 SaaS 平台基座（后端）</description>
 
     <properties>
         <java.version>17</java.version>
@@ -116,7 +116,7 @@
     </dependencies>
 
     <build>
-        <finalName>project-management</finalName>
+        <finalName>saas-bedrock</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

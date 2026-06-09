@@ -14,4 +14,4 @@ spring:
 logging:
   level:
     root: info
-    com.github.lyd11250.project: info
+    com.github.lyd11250.bedrock: info

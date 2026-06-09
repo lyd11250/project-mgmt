@@ -11,7 +11,7 @@ RUN mvn -s /root/.m2/settings.xml -DskipTests package
 # ---- 运行阶段 ----
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /app/target/project-management.jar app.jar
+COPY --from=build /app/target/saas-bedrock.jar app.jar
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod
 ENTRYPOINT ["java", "-jar", "app.jar"]

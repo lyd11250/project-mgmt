@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:project}
-    username: ${DB_USER:project}
-    password: ${DB_PASSWORD:project}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bedrock}
+    username: ${DB_USER:bedrock}
+    password: ${DB_PASSWORD:bedrock}
     driver-class-name: org.postgresql.Driver
   data:
     redis:
@@ -14,4 +14,4 @@ spring:
 logging:
   level:
     root: info
-    com.github.lyd11250.project: debug
+    com.github.lyd11250.bedrock: debug

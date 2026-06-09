@@ -8,15 +8,13 @@
 
 **Bedrock — 多租户 SaaS 平台基座**：只做 SaaS 必备的系统能力（租户/套餐/RBAC/菜单/鉴权/多租户隔离），租户业务功能由上层业务模块（`biz/*`）扩展、**不属于基座**。模块化单体（当前不拆微服务）。
 
-> ⚠️ 项目已更名为 **Bedrock**，但代码标识尚未重命名——当前基础包仍为 `com.github.lyd11250.project`、系统能力仍在 `auth` 包，将在**第 1 期-A2** 统一改为 `…bedrock` / `system`。A2 完成前，代码中沿用 `project` / `auth`。
-
 - **前端**：Vue3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + Axios
 - **后端**：Spring Boot **4.0.6**（Spring Framework 7 / JDK 17）+ MyBatis-Plus + Sa-token + Flyway
 - **存储**：PostgreSQL 16+、Redis 7+（Sa-token 会话）
 - **部署**：Docker Compose，区分 dev（测试机）/ prod（云服务器）
 - **GitHub**：`lyd11250/project-mgmt`，主分支 `main`
 
-**基座能力域**：租户、套餐、RBAC（用户/角色/菜单）、鉴权、多租户隔离 —— 归 `system` 模块（当前代码为 `auth`）。业务功能不内置，接入方式见 [功能设计.md](功能设计.md) 第 3 节。
+**基座能力域**：租户、套餐、RBAC（用户/角色/菜单）、鉴权、多租户隔离 —— 归 `system` 模块。业务功能不内置，接入方式见 [功能设计.md](功能设计.md) 第 3 节。
 **路线图**：见 [开发进度.md](开发进度.md)。当前：第 1 期-A 认证基座 ✅，下一步 **第 1 期-A2 基座完善与重命名**。
 
 ---
@@ -26,7 +24,7 @@
 1. **本机无 Docker**：开发机仅有 JDK17 / Maven / Node。镜像构建与容器运行**全部在测试机**进行，不在本机执行 `docker` 命令。本机只做 `mvn compile/package`、`npm run build` 等。
 2. **测试机网络在国内、慢**：直连 Docker Hub / Maven Central / npmjs 会卡死。已配国内源——后端 Maven 走 `backend/settings.xml`（阿里云镜像，构建命令带 `-s settings.xml`），前端 npm 走 `registry.npmmirror.com`（frontend/Dockerfile），Docker 拉基础镜像走测试机 `registry-mirrors`。**新增依赖时不要破坏这些换源配置。**
 3. **Spring Boot 4 自动配置已模块化**：第三方库单独引入**不再触发自动配置**。集成 Flyway/Liquibase 等必须引 `spring-boot-starter-xxx`（如 `spring-boot-starter-flyway`），只引 `flyway-core` 会**静默失效**（不报错、不生效）。`flyway-database-postgresql` 仍需单独保留。参见 Spring Boot 4.0 Migration Guide。
-4. **基础包当前为 `com.github.lyd11250.project`**（A2 将重命名为 `…bedrock`），系统能力当前在 `…project.auth` 包（A2 将重组为 `…bedrock.system`）。新建类置于正确子包；A2 完成前沿用 `project` / `auth`。
+4. **基础包为 `com.github.lyd11250.bedrock`**，系统能力在 `…bedrock.system` 包（含 controller/service/mapper/entity/dto/vo）。构件名 `saas-bedrock`（jar 为 `saas-bedrock.jar`）。新建类置于 `system` 域的正确子包。
 5. **默认超管**：租户码 `PLATFORM` / 用户名 `admin` / 密码 `admin123456`（`PlatformSeeder` 幂等初始化，可用环境变量覆盖）。
 
 ---
@@ -34,12 +32,10 @@
 ## 3. 目录结构
 
 ```
-backend/  Spring Boot（基础包 com.github.lyd11250.project，A2 改为 …bedrock）
-  common/   通用：Result / ResultCode / BusinessException / GlobalExceptionHandler / BaseEntity
+backend/  Spring Boot（基础包 com.github.lyd11250.bedrock）
+  common/   通用：Result / ResultCode / BusinessException / GlobalExceptionHandler / BaseEntity / GlobalBaseEntity
   config/   配置：SaToken / Cors / MybatisPlus / 多租户(TenantLineHandlerImpl + TenantContext) / 审计填充
-  auth/     系统能力域：用户/角色/租户/鉴权（A2 重组为 system，并补菜单/套餐）
-  system/   系统级：PingController 等
-  org/ project/   遗留业务占位包，A2 清理（基座不内置业务）
+  system/   系统能力域：租户/套餐/菜单/用户/角色/鉴权（含 PlatformSeeder / RbacConstants / StpInterfaceImpl + PingController）
   每个域内分层：controller / service / mapper / entity / dto / vo
   resources/ application.yml(+dev/prod) | db/migration/ (Flyway SQL)
 frontend/ Vue3（src/ 下 api / stores / router / layouts / views / components / directives / utils）
@@ -104,7 +100,7 @@ docker-compose.yml(.dev/.prod)  容器编排
 ### 本机（无 Docker，仅验证编译）
 ```bash
 # 后端编译/打包（必须带 -s settings.xml 走阿里云源）
-cd backend && ./mvnw -s settings.xml -DskipTests package   # 产物 target/project-management.jar
+cd backend && ./mvnw -s settings.xml -DskipTests package   # 产物 target/saas-bedrock.jar
 # 后端本地运行（需可达的 PG/Redis，默认 localhost，DB 名/用户/密码默认 project）
 SPRING_PROFILES_ACTIVE=dev ./mvnw -s settings.xml spring-boot:run
 # 健康检查：GET http://localhost:8080/api/v1/ping → {"code":0,"message":"成功","data":"pong"}
