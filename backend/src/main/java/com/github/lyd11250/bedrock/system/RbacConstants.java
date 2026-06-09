@@ -22,6 +22,23 @@ public final class RbacConstants {
     public static final String ROLE_TENANT_ADMIN = "TENANT_ADMIN";
     public static final String ROLE_USER = "USER";
 
+    /**
+     * 系统保留角色码：禁止租户经接口自行创建/复用。
+     * 尤其 {@code SUPER_ADMIN} 关联通配权限与跨租户能力，放开将导致越权提权。
+     * （播种逻辑 {@code SeedService} 直接落库，不走此校验。）
+     */
+    public static final java.util.Set<String> RESERVED_ROLE_CODES =
+            java.util.Set.of(ROLE_SUPER_ADMIN, ROLE_TENANT_ADMIN, ROLE_USER);
+
+    /** 判断角色码是否为系统保留（忽略大小写与首尾空白）。 */
+    public static boolean isReservedRoleCode(String code) {
+        if (code == null) {
+            return false;
+        }
+        String trimmed = code.trim();
+        return RESERVED_ROLE_CODES.stream().anyMatch(r -> r.equalsIgnoreCase(trimmed));
+    }
+
     /** 通配权限（超级管理员，绕过套餐边界与菜单分配）。 */
     public static final String PERMISSION_ALL = "*";
 

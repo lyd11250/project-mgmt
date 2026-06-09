@@ -43,6 +43,9 @@ public class RoleService {
     }
 
     public Long create(RoleDTO dto) {
+        if (RbacConstants.isReservedRoleCode(dto.getCode())) {
+            throw new BusinessException("角色码不可用");
+        }
         if (roleMapper.selectCount(Wrappers.<SysRole>lambdaQuery().eq(SysRole::getCode, dto.getCode())) > 0) {
             throw new BusinessException("角色码已存在");
         }

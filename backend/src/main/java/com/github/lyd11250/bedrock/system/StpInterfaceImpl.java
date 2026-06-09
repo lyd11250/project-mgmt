@@ -50,7 +50,8 @@ public class StpInterfaceImpl implements StpInterface {
             return Collections.emptyList();
         }
         List<String> roleCodes = roleCodesOf(roleIds);
-        if (roleCodes.contains(RbacConstants.ROLE_SUPER_ADMIN)) {
+        // 通配权限仅在平台租户内对 SUPER_ADMIN 生效；非平台租户即便存在该角色码也不授予 *（防越权提权）。
+        if (roleCodes.contains(RbacConstants.ROLE_SUPER_ADMIN) && isPlatformTenant()) {
             return List.of(RbacConstants.PERMISSION_ALL);
         }
 
@@ -71,10 +72,26 @@ public class StpInterfaceImpl implements StpInterface {
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
         List<Long> roleIds = roleIdsOf(loginId);
-        return roleIds.isEmpty() ? Collections.emptyList() : roleCodesOf(roleIds);
+        if (roleIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> roleCodes = roleCodesOf(roleIds);
+        // 非平台租户内剔除 SUPER_ADMIN，确保 @SaCheckRole("SUPER_ADMIN") 守卫的平台级接口无法被越权命中。
+        if (!isPlatformTenant()) {
+            return roleCodes.stream()
+                    .filter(code -> !RbacConstants.ROLE_SUPER_ADMIN.equals(code))
+                    .toList();
+        }
+        return roleCodes;
     }
 
     // ---- 内部 ----
+
+    /** 当前会话租户是否为平台租户。 */
+    private boolean isPlatformTenant() {
+        Object tid = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
+        return tid != null && RbacConstants.PLATFORM_TENANT_ID.equals(Long.valueOf(tid.toString()));
+    }
 
     private List<Long> roleIdsOf(Object loginId) {
         Long userId = Long.valueOf(loginId.toString());
