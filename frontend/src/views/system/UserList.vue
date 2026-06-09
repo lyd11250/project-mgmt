@@ -10,6 +10,7 @@ import {
   type UserItem,
 } from '@/api/user'
 import { listRoles, type Role } from '@/api/role'
+import { formatDateTime } from '@/utils/time'
 
 const loading = ref(false)
 const list = ref<UserItem[]>([])
@@ -123,7 +124,9 @@ async function handleDelete(row: UserItem) {
           <el-tag v-for="r in row.roles" :key="r.id" class="role-tag">{{ r.name }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180" />
+      <el-table-column label="创建时间" width="180">
+        <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="260">
         <template #default="{ row }">
           <el-button v-permission="'system:user:assignRole'" link type="primary" @click="openAssign(row)">

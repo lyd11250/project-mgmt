@@ -94,6 +94,9 @@ docker-compose.yml(.dev/.prod)  容器编排
 - **按钮级权限**：`v-permission="'user:create'"`（无权限移除元素）。
 - **视图**：按域分目录（如 `views/system/`），用 Element Plus 组件。
 - TS 严格类型，接口定义随 api 文件就近声明。
+- **时间格式与国际化**：
+  - 所有日期时间显示统一格式 `YYYY-MM-DD HH:mm:ss`，使用 `src/utils/time.ts` 中的 `formatDateTime()` 函数（基于 dayjs）。表格列显示时间时，用 `<template #default>{{ formatDateTime(row.createdAt) }}</template>` 的自定义模板方式。
+  - Element Plus 已在 `main.ts` 配置中文 locale（`zh-cn`），所有日期选择器（`el-date-picker`）、时间选择器（`el-time-picker`）自动显示中文。新增日期选择器务必配置 `format="YYYY-MM-DD HH:mm:ss"` 与 `value-format="YYYY-MM-DDTHH:mm:ss"`（前者控制显示格式，后者控制存储格式）。
 
 ---
 

@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createTenant, pageTenants, type TenantItem } from '@/api/tenant'
 import { listPackages, type PackageItem } from '@/api/package'
+import { formatDateTime } from '@/utils/time'
 
 const loading = ref(false)
 const list = ref<TenantItem[]>([])
@@ -87,9 +88,11 @@ async function submitCreate() {
         </template>
       </el-table-column>
       <el-table-column label="到期时间" width="180">
-        <template #default="{ row }">{{ row.expireAt ?? '永久' }}</template>
+        <template #default="{ row }">{{ row.expireAt ? formatDateTime(row.expireAt) : '永久' }}</template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180" />
+      <el-table-column label="创建时间" width="180">
+        <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
     </el-table>
 
     <el-pagination class="pager" layout="total, prev, pager, next" :total="total"
@@ -114,7 +117,7 @@ async function submitCreate() {
         </el-form-item>
         <el-form-item label="到期时间">
           <el-date-picker v-model="form.expireAt" type="datetime" class="full"
-            placeholder="留空表示永久" value-format="YYYY-MM-DDTHH:mm:ss" />
+            placeholder="留空表示永久" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DDTHH:mm:ss" />
         </el-form-item>
         <el-divider>租户管理员</el-divider>
         <el-form-item label="管理员账号" prop="adminUsername">
