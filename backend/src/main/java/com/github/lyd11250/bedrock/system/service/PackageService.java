@@ -5,22 +5,26 @@ import com.github.lyd11250.bedrock.common.BusinessException;
 import com.github.lyd11250.bedrock.system.entity.SysPackage;
 import com.github.lyd11250.bedrock.system.entity.SysPackageMenu;
 import com.github.lyd11250.bedrock.system.entity.SysPackageQuota;
+import com.github.lyd11250.bedrock.system.entity.SysQuotaDef;
+import com.github.lyd11250.bedrock.system.dto.AssignQuotasDTO;
 import com.github.lyd11250.bedrock.system.dto.PackageDTO;
 import com.github.lyd11250.bedrock.system.mapper.SysPackageMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysPackageMenuMapper;
 import com.github.lyd11250.bedrock.system.mapper.SysPackageQuotaMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysQuotaDefMapper;
+import com.github.lyd11250.bedrock.system.vo.PackageQuotaVO;
 import com.github.lyd11250.bedrock.system.vo.PackageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * 套餐管理（平台超管）：套餐 CRUD、套餐↔菜单分配、套餐配额（键值模型）。全局表，不参与租户隔离。
+ * 套餐管理（平台超管）：套餐 CRUD、套餐↔菜单分配、套餐配额配置。全局表，不参与租户隔离。
  */
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ public class PackageService {
     private final SysPackageMapper packageMapper;
     private final SysPackageMenuMapper packageMenuMapper;
     private final SysPackageQuotaMapper packageQuotaMapper;
+    private final SysQuotaDefMapper quotaDefMapper;
 
     public List<PackageVO> list() {
         return packageMapper.selectList(Wrappers.<SysPackage>lambdaQuery().orderByAsc(SysPackage::getId))
@@ -46,7 +51,6 @@ public class PackageService {
         p.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
         p.setRemark(dto.getRemark());
         packageMapper.insert(p);
-        replaceQuotas(p.getId(), dto.getQuotas());
         return p.getId();
     }
 
@@ -60,9 +64,6 @@ public class PackageService {
         }
         p.setRemark(dto.getRemark());
         packageMapper.updateById(p);
-        if (dto.getQuotas() != null) {
-            replaceQuotas(id, dto.getQuotas());
-        }
     }
 
     @Transactional
@@ -95,30 +96,51 @@ public class PackageService {
         }
     }
 
-    /** 全量覆盖套餐配额：删后按 map 重建（仅写入非空 key）。 */
-    private void replaceQuotas(Long packageId, Map<String, Long> quotas) {
+    /**
+     * 列出某套餐的配额：以配额定义字典为全集，左连接该套餐的已配置值（未配置=不限 -1）。
+     */
+    public List<PackageQuotaVO> listQuotas(Long packageId) {
+        require(packageId);
+        Map<Long, Long> values = packageQuotaMapper.selectList(Wrappers.<SysPackageQuota>lambdaQuery()
+                        .eq(SysPackageQuota::getPackageId, packageId))
+                .stream().collect(Collectors.toMap(SysPackageQuota::getQuotaId, SysPackageQuota::getQuotaValue));
+        return quotaDefMapper.selectList(Wrappers.<SysQuotaDef>lambdaQuery()
+                        .orderByAsc(SysQuotaDef::getSort).orderByAsc(SysQuotaDef::getId))
+                .stream().map(def -> {
+                    PackageQuotaVO vo = new PackageQuotaVO();
+                    vo.setQuotaId(def.getId());
+                    vo.setQuotaKey(def.getQuotaKey());
+                    vo.setQuotaName(def.getName());
+                    vo.setRemark(def.getRemark());
+                    vo.setQuotaValue(values.getOrDefault(def.getId(), -1L));
+                    return vo;
+                }).toList();
+    }
+
+    /** 全量覆盖某套餐配额：删后按入参重建（仅写入有限上限，-1/空=不限不落库）。 */
+    @Transactional
+    public void saveQuotas(Long packageId, List<AssignQuotasDTO.QuotaValue> quotas) {
+        require(packageId);
         packageQuotaMapper.delete(Wrappers.<SysPackageQuota>lambdaQuery().eq(SysPackageQuota::getPackageId, packageId));
         if (quotas == null) {
             return;
         }
-        quotas.forEach((key, value) -> {
-            if (!StringUtils.hasText(key) || value == null) {
-                return;
+        Map<Long, SysQuotaDef> defs = quotaDefMapper.selectList(null)
+                .stream().collect(Collectors.toMap(SysQuotaDef::getId, Function.identity()));
+        for (AssignQuotasDTO.QuotaValue q : quotas) {
+            if (q.getQuotaId() == null || !defs.containsKey(q.getQuotaId())) {
+                continue;
             }
-            SysPackageQuota q = new SysPackageQuota();
-            q.setPackageId(packageId);
-            q.setQuotaKey(key.trim());
-            q.setQuotaValue(value);
-            packageQuotaMapper.insert(q);
-        });
-    }
-
-    private Map<String, Long> quotasOf(Long packageId) {
-        Map<String, Long> map = new LinkedHashMap<>();
-        packageQuotaMapper.selectList(Wrappers.<SysPackageQuota>lambdaQuery()
-                        .eq(SysPackageQuota::getPackageId, packageId))
-                .forEach(q -> map.put(q.getQuotaKey(), q.getQuotaValue()));
-        return map;
+            Long value = q.getQuotaValue();
+            if (value == null || value < 0) {
+                continue;
+            }
+            SysPackageQuota entity = new SysPackageQuota();
+            entity.setPackageId(packageId);
+            entity.setQuotaId(q.getQuotaId());
+            entity.setQuotaValue(value);
+            packageQuotaMapper.insert(entity);
+        }
     }
 
     private SysPackage require(Long id) {
@@ -136,7 +158,6 @@ public class PackageService {
         vo.setCode(p.getCode());
         vo.setStatus(p.getStatus());
         vo.setRemark(p.getRemark());
-        vo.setQuotas(quotasOf(p.getId()));
         return vo;
     }
 }

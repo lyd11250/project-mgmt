@@ -6,9 +6,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 套餐配额（键值模型）。全局表，不带 {@code tenant_id}。
+ * 套餐配额。全局表，不带 {@code tenant_id}。
  *
- * <p>{@code quotaValue = -1} 表示不限；无记录视为缺省放行（见 {@code QuotaService}）。
+ * <p>{@code quotaId} 引用 {@link SysQuotaDef}；{@code quotaValue = -1} 表示不限，
+ * 无记录视为缺省放行（见 {@code QuotaService}）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -17,8 +18,8 @@ public class SysPackageQuota extends GlobalBaseEntity {
 
     private Long packageId;
 
-    /** 配额标识，如 max_users。 */
-    private String quotaKey;
+    /** 配额定义 id（引用 sys_quota_def）。 */
+    private Long quotaId;
 
     /** 配额上限，-1 表示不限。 */
     private Long quotaValue;

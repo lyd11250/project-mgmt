@@ -2,10 +2,8 @@ package com.github.lyd11250.bedrock.system.vo;
 
 import lombok.Data;
 
-import java.util.Map;
-
 /**
- * 套餐视图对象。
+ * 套餐视图对象。配额经独立接口查询，见 {@code PackageQuotaVO}。
  */
 @Data
 public class PackageVO {
@@ -19,7 +17,4 @@ public class PackageVO {
     private Integer status;
 
     private String remark;
-
-    /** 配额（键值模型）：quota_key → 上限值，-1 表示不限。 */
-    private Map<String, Long> quotas;
 }

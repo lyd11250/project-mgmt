@@ -6,8 +6,10 @@ import com.github.lyd11250.bedrock.common.BusinessException;
 import com.github.lyd11250.bedrock.config.TenantLineHandlerImpl;
 import com.github.lyd11250.bedrock.system.QuotaKeys;
 import com.github.lyd11250.bedrock.system.entity.SysPackageQuota;
+import com.github.lyd11250.bedrock.system.entity.SysQuotaDef;
 import com.github.lyd11250.bedrock.system.entity.Tenant;
 import com.github.lyd11250.bedrock.system.mapper.SysPackageQuotaMapper;
+import com.github.lyd11250.bedrock.system.mapper.SysQuotaDefMapper;
 import com.github.lyd11250.bedrock.system.mapper.TenantMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,9 +27,10 @@ public class QuotaService {
 
     private final TenantMapper tenantMapper;
     private final SysPackageQuotaMapper quotaMapper;
+    private final SysQuotaDefMapper quotaDefMapper;
 
     /**
-     * 当前租户套餐对指定配额的上限；{@code -1} 表示不限（含未配置）。
+     * 当前租户套餐对指定配额的上限；{@code -1} 表示不限（含未定义/未配置）。
      */
     public long limitOf(String quotaKey) {
         Object tid = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
@@ -38,9 +41,14 @@ public class QuotaService {
         if (tenant == null || tenant.getPackageId() == null) {
             return QuotaKeys.UNLIMITED;
         }
+        SysQuotaDef def = quotaDefMapper.selectOne(Wrappers.<SysQuotaDef>lambdaQuery()
+                .eq(SysQuotaDef::getQuotaKey, quotaKey));
+        if (def == null) {
+            return QuotaKeys.UNLIMITED;
+        }
         SysPackageQuota quota = quotaMapper.selectOne(Wrappers.<SysPackageQuota>lambdaQuery()
                 .eq(SysPackageQuota::getPackageId, tenant.getPackageId())
-                .eq(SysPackageQuota::getQuotaKey, quotaKey));
+                .eq(SysPackageQuota::getQuotaId, def.getId()));
         return quota == null || quota.getQuotaValue() == null ? QuotaKeys.UNLIMITED : quota.getQuotaValue();
     }
 

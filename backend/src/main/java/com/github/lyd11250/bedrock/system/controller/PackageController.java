@@ -5,8 +5,10 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import com.github.lyd11250.bedrock.common.Result;
 import com.github.lyd11250.bedrock.system.RbacConstants;
 import com.github.lyd11250.bedrock.system.dto.AssignMenusDTO;
+import com.github.lyd11250.bedrock.system.dto.AssignQuotasDTO;
 import com.github.lyd11250.bedrock.system.dto.PackageDTO;
 import com.github.lyd11250.bedrock.system.service.PackageService;
+import com.github.lyd11250.bedrock.system.vo.PackageQuotaVO;
 import com.github.lyd11250.bedrock.system.vo.PackageVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,19 @@ public class PackageController {
     @SaCheckPermission("system:package:assignMenu")
     public Result<Void> assignMenus(@PathVariable Long id, @RequestBody AssignMenusDTO dto) {
         packageService.assignMenus(id, dto.getMenuIds());
+        return Result.ok();
+    }
+
+    @GetMapping("/{id}/quotas")
+    @SaCheckPermission("system:package:list")
+    public Result<List<PackageQuotaVO>> quotas(@PathVariable Long id) {
+        return Result.ok(packageService.listQuotas(id));
+    }
+
+    @PutMapping("/{id}/quotas")
+    @SaCheckPermission("system:package:quota")
+    public Result<Void> assignQuotas(@PathVariable Long id, @RequestBody AssignQuotasDTO dto) {
+        packageService.saveQuotas(id, dto.getQuotas());
         return Result.ok();
     }
 }

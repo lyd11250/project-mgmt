@@ -3,12 +3,15 @@ import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, ElTree, type FormInstance, type FormRules } from 'element-plus'
 import {
   assignPackageMenus,
+  assignPackageQuotas,
   createPackage,
   deletePackage,
   getPackageMenus,
+  getPackageQuotas,
   listPackages,
   updatePackage,
   type PackageItem,
+  type PackageQuota,
 } from '@/api/package'
 import { getMenuTree, type MenuNode } from '@/api/menu'
 
@@ -30,25 +33,14 @@ onMounted(load)
 const editVisible = ref(false)
 const editRef = ref<FormInstance>()
 const editing = ref<PackageItem | null>(null)
-// maxUsers 为 null 表示不限（提交时落为 -1）
-const form = reactive<{ name: string; code: string; remark: string; maxUsers: number | null }>({
+const form = reactive<{ name: string; code: string; remark: string }>({
   name: '',
   code: '',
   remark: '',
-  maxUsers: null,
 })
 const rules: FormRules = {
   name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入套餐编码', trigger: 'blur' }],
-}
-
-/** -1 / 未配置 视为不限，表单用 null 表示。 */
-function quotaToForm(value?: number): number | null {
-  return value == null || value < 0 ? null : value
-}
-
-function buildQuotas(): Record<string, number> {
-  return { max_users: form.maxUsers == null ? -1 : form.maxUsers }
 }
 
 function openCreate() {
@@ -56,7 +48,6 @@ function openCreate() {
   form.name = ''
   form.code = ''
   form.remark = ''
-  form.maxUsers = null
   editVisible.value = true
 }
 
@@ -65,7 +56,6 @@ function openEdit(row: PackageItem) {
   form.name = row.name
   form.code = row.code
   form.remark = row.remark ?? ''
-  form.maxUsers = quotaToForm(row.quotas?.max_users)
   editVisible.value = true
 }
 
@@ -73,12 +63,7 @@ async function submitEdit() {
   if (!editRef.value) return
   await editRef.value.validate(async (valid) => {
     if (!valid) return
-    const payload = {
-      name: form.name,
-      code: form.code,
-      remark: form.remark,
-      quotas: buildQuotas(),
-    }
+    const payload = { name: form.name, code: form.code, remark: form.remark }
     if (editing.value) {
       await updatePackage(editing.value.id, payload)
       ElMessage.success('已更新套餐')
@@ -89,12 +74,6 @@ async function submitEdit() {
     editVisible.value = false
     await load()
   })
-}
-
-/** 列表展示用：-1/未配置 显示“不限”。 */
-function displayMaxUsers(row: PackageItem): string {
-  const v = row.quotas?.max_users
-  return v == null || v < 0 ? '不限' : String(v)
 }
 
 async function handleDelete(row: PackageItem) {
@@ -130,6 +109,42 @@ async function submitAssignMenus() {
   ElMessage.success('已更新套餐菜单')
   menuVisible.value = false
 }
+
+// ---- 配置配额 ----
+// quotaRows[].quotaValue 为 null 表示不限（提交时落为 -1）
+const quotaVisible = ref(false)
+const quotaLoading = ref(false)
+const quotaSaving = ref(false)
+const quotaPackage = ref<PackageItem | null>(null)
+const quotaRows = ref<(PackageQuota & { input: number | null })[]>([])
+
+async function openQuotas(row: PackageItem) {
+  quotaPackage.value = row
+  quotaVisible.value = true
+  quotaLoading.value = true
+  try {
+    const data = await getPackageQuotas(row.id)
+    quotaRows.value = data.map((q) => ({ ...q, input: q.quotaValue < 0 ? null : q.quotaValue }))
+  } finally {
+    quotaLoading.value = false
+  }
+}
+
+async function submitQuotas() {
+  if (!quotaPackage.value) return
+  const quotas = quotaRows.value.map((q) => ({
+    quotaId: q.quotaId,
+    quotaValue: q.input == null ? -1 : q.input,
+  }))
+  quotaSaving.value = true
+  try {
+    await assignPackageQuotas(quotaPackage.value.id, quotas)
+    ElMessage.success('已更新套餐配额')
+    quotaVisible.value = false
+  } finally {
+    quotaSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -141,14 +156,14 @@ async function submitAssignMenus() {
     <el-table v-loading="loading" :data="list" border stripe>
       <el-table-column prop="name" label="套餐名称" />
       <el-table-column prop="code" label="套餐编码" />
-      <el-table-column label="最大用户数" width="110">
-        <template #default="{ row }">{{ displayMaxUsers(row) }}</template>
-      </el-table-column>
       <el-table-column prop="remark" label="说明" />
-      <el-table-column label="操作" width="240">
+      <el-table-column label="操作" width="320">
         <template #default="{ row }">
           <el-button v-permission="'system:package:assignMenu'" link type="primary" @click="openAssignMenus(row)">
             分配菜单
+          </el-button>
+          <el-button v-permission="'system:package:quota'" link type="primary" @click="openQuotas(row)">
+            配置配额
           </el-button>
           <el-button v-permission="'system:package:update'" link type="primary" @click="openEdit(row)">
             编辑
@@ -169,10 +184,6 @@ async function submitAssignMenus() {
         <el-form-item label="编码" prop="code">
           <el-input v-model="form.code" :disabled="!!editing" placeholder="全局唯一，如 PRO" />
         </el-form-item>
-        <el-form-item label="最大用户数">
-          <el-input-number v-model="form.maxUsers" :min="0" controls-position="right" placeholder="留空=不限" />
-          <span class="hint">留空表示不限</span>
-        </el-form-item>
         <el-form-item label="说明">
           <el-input v-model="form.remark" type="textarea" />
         </el-form-item>
@@ -192,6 +203,27 @@ async function submitAssignMenus() {
         <el-button type="primary" @click="submitAssignMenus">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 配置配额 -->
+    <el-dialog v-model="quotaVisible" :title="`配置配额${quotaPackage ? ' - ' + quotaPackage.name : ''}`" width="520px">
+      <el-table v-loading="quotaLoading" :data="quotaRows" border>
+        <el-table-column prop="quotaName" label="配额名称" min-width="140" />
+        <el-table-column prop="quotaKey" label="标识" min-width="140" />
+        <el-table-column label="上限值" width="180">
+          <template #default="{ row }">
+            <el-input-number v-model="row.input" :min="0" controls-position="right" placeholder="留空=不限" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <p v-if="!quotaLoading && !quotaRows.length" class="hint">暂无配额定义</p>
+      <p class="hint">上限值留空表示不限。</p>
+      <template #footer>
+        <el-button @click="quotaVisible = false">取消</el-button>
+        <el-button type="primary" :loading="quotaSaving" :disabled="!quotaRows.length" @click="submitQuotas">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -200,7 +232,7 @@ async function submitAssignMenus() {
   margin-bottom: 12px;
 }
 .hint {
-  margin-left: 8px;
+  margin-top: 8px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }

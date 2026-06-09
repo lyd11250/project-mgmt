@@ -6,8 +6,6 @@ export interface PackageItem {
   code: string
   status: number
   remark?: string
-  /** 配额（键值模型）：quota_key → 上限值，-1 表示不限。 */
-  quotas?: Record<string, number>
 }
 
 export interface PackageParams {
@@ -15,7 +13,15 @@ export interface PackageParams {
   code: string
   status?: number
   remark?: string
-  quotas?: Record<string, number>
+}
+
+/** 套餐配额项（配额定义 + 该套餐配置值）。quotaValue=-1 表示不限。 */
+export interface PackageQuota {
+  quotaId: string
+  quotaKey: string
+  quotaName: string
+  remark?: string
+  quotaValue: number
 }
 
 export function listPackages() {
@@ -40,4 +46,12 @@ export function deletePackage(id: string) {
 
 export function assignPackageMenus(id: string, menuIds: string[]) {
   return request.put<unknown, void>(`/system/packages/${id}/menus`, { menuIds })
+}
+
+export function getPackageQuotas(id: string) {
+  return request.get<unknown, PackageQuota[]>(`/system/packages/${id}/quotas`)
+}
+
+export function assignPackageQuotas(id: string, quotas: { quotaId: string; quotaValue: number }[]) {
+  return request.put<unknown, void>(`/system/packages/${id}/quotas`, { quotas })
 }
