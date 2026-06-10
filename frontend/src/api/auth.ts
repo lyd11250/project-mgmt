@@ -21,17 +21,17 @@ export interface MeInfo {
 
 /** 登录：租户编码 + 用户名 + 密码。 */
 export function login(params: LoginParams) {
-  return request.post<unknown, LoginResult>('/auth/login', params)
+  return request.post<unknown, LoginResult>('/system/auth/login', params)
 }
 
 /** 登出。 */
 export function logout() {
-  return request.post<unknown, void>('/auth/logout')
+  return request.post<unknown, void>('/system/auth/logout')
 }
 
 /** 当前登录用户信息（含角色与权限）。 */
 export function getMe() {
-  return request.get<unknown, MeInfo>('/auth/me')
+  return request.get<unknown, MeInfo>('/system/auth/me')
 }
 
 /** 健康检查（开放接口）。 */

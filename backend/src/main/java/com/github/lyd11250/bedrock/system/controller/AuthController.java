@@ -5,6 +5,7 @@ import com.github.lyd11250.bedrock.system.service.AuthService;
 import com.github.lyd11250.bedrock.system.vo.LoginVO;
 import com.github.lyd11250.bedrock.system.vo.MeVO;
 import com.github.lyd11250.bedrock.common.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 认证接口。{@code /login} 开放，其余需登录。
  */
+@Tag(name = "认证")
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/system/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

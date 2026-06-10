@@ -30,25 +30,25 @@ export interface UserCreateParams {
 }
 
 export function pageUsers(params: { page?: number; size?: number; username?: string }) {
-  return request.get<unknown, PageResult<UserItem>>('/users', { params })
+  return request.get<unknown, PageResult<UserItem>>('/system/users', { params })
 }
 
 export function createUser(data: UserCreateParams) {
-  return request.post<unknown, string>('/users', data)
+  return request.post<unknown, string>('/system/users', data)
 }
 
 export function updateUser(id: string, data: { status?: number; personId?: string }) {
-  return request.put<unknown, void>(`/users/${id}`, data)
+  return request.put<unknown, void>(`/system/users/${id}`, data)
 }
 
 export function deleteUser(id: string) {
-  return request.delete<unknown, void>(`/users/${id}`)
+  return request.delete<unknown, void>(`/system/users/${id}`)
 }
 
 export function resetPassword(id: string, password: string) {
-  return request.put<unknown, void>(`/users/${id}/password`, { password })
+  return request.put<unknown, void>(`/system/users/${id}/password`, { password })
 }
 
 export function assignRoles(id: string, roleIds: string[]) {
-  return request.put<unknown, void>(`/users/${id}/roles`, { roleIds })
+  return request.put<unknown, void>(`/system/users/${id}/roles`, { roleIds })
 }

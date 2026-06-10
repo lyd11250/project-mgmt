@@ -6,6 +6,7 @@ import com.github.lyd11250.bedrock.system.dto.AssignMenusDTO;
 import com.github.lyd11250.bedrock.system.dto.RoleDTO;
 import com.github.lyd11250.bedrock.system.service.RoleService;
 import com.github.lyd11250.bedrock.system.vo.RoleVO;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,8 +23,9 @@ import java.util.List;
 /**
  * 角色管理接口（本租户，租户管理员维护）。
  */
+@Tag(name = "角色管理")
 @RestController
-@RequestMapping("/api/v1/roles")
+@RequestMapping("/api/v1/system/roles")
 @RequiredArgsConstructor
 public class RoleController {
 

@@ -15,10 +15,13 @@ public class SaTokenConfig implements WebMvcConfigurer {
     /** 无需登录即可访问的路径。 */
     private static final String[] EXCLUDE_PATHS = {
             "/api/v1/ping",
-            "/api/v1/auth/login",
-            "/doc.html",
+            "/api/v1/system/auth/login",
+            // API 文档（springdoc）：UI、静态资源与 OpenAPI JSON
+            "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**",
             "/error"
     };
 

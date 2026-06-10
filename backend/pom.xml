@@ -23,6 +23,8 @@
         <sa-token.version>1.45.0</sa-token.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <!-- springdoc 3.0.x 线为 Spring Boot 4 / Spring Framework 7 兼容版本（Jackson 3） -->
+        <springdoc.version>3.0.3</springdoc.version>
     </properties>
 
     <dependencies>
@@ -108,11 +110,12 @@
             <scope>test</scope>
         </dependency>
 
-        <!--
-            说明：springdoc-openapi（Swagger UI）暂未引入。
-            Spring Boot 4 基于 Spring Framework 7，需 springdoc 的兼容版本；
-            待其稳定后于第 1 期接入，本期先保证骨架可编译启动。
-        -->
+        <!-- API 文档：springdoc-openapi（Swagger UI）。3.0.x 适配 Spring Boot 4 / Spring Framework 7 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

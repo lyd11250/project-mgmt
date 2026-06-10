@@ -25,9 +25,9 @@ export interface TenantCreateParams {
 }
 
 export function pageTenants(params: { page?: number; size?: number }) {
-  return request.get<unknown, PageResult<TenantItem>>('/tenants', { params })
+  return request.get<unknown, PageResult<TenantItem>>('/system/tenants', { params })
 }
 
 export function createTenant(data: TenantCreateParams) {
-  return request.post<unknown, string>('/tenants', data)
+  return request.post<unknown, string>('/system/tenants', data)
 }

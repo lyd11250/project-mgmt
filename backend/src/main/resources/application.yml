@@ -32,3 +32,12 @@ sa-token:
   is-share: false
   token-style: uuid
   is-log: false
+
+# API 文档（springdoc-openapi）：UI=/swagger-ui.html，JSON=/v3/api-docs。生产环境在 application-prod.yml 关闭。
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha

@@ -15,3 +15,10 @@ logging:
   level:
     root: info
     com.github.lyd11250.bedrock: info
+
+# 生产环境关闭 API 文档（不对外暴露接口结构）
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

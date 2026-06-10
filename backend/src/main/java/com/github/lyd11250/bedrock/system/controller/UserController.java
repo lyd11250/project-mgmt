@@ -9,6 +9,7 @@ import com.github.lyd11250.bedrock.system.dto.UserUpdateDTO;
 import com.github.lyd11250.bedrock.system.service.UserService;
 import com.github.lyd11250.bedrock.system.vo.UserVO;
 import com.github.lyd11250.bedrock.common.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,8 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 用户管理接口（租户内，按权限校验）。
  */
+@Tag(name = "用户管理")
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/system/users")
 @RequiredArgsConstructor
 public class UserController {
 

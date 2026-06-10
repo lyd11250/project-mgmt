@@ -7,6 +7,7 @@ import com.github.lyd11250.bedrock.system.RbacConstants;
 import com.github.lyd11250.bedrock.system.dto.MenuDTO;
 import com.github.lyd11250.bedrock.system.service.MenuService;
 import com.github.lyd11250.bedrock.system.vo.MenuVO;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +24,7 @@ import java.util.List;
 /**
  * 菜单接口：菜单目录管理（平台超管）+ 导航/可分配菜单下发。
  */
+@Tag(name = "菜单管理")
 @RestController
 @RequestMapping("/api/v1/system/menus")
 @RequiredArgsConstructor

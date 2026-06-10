@@ -7,6 +7,7 @@ import com.github.lyd11250.bedrock.system.dto.TenantCreateDTO;
 import com.github.lyd11250.bedrock.system.service.TenantService;
 import com.github.lyd11250.bedrock.system.vo.TenantVO;
 import com.github.lyd11250.bedrock.common.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 租户管理接口（仅超级管理员）。
  */
+@Tag(name = "租户管理")
 @RestController
-@RequestMapping("/api/v1/tenants")
+@RequestMapping("/api/v1/system/tenants")
 @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)
 @RequiredArgsConstructor
 public class TenantController {

@@ -10,6 +10,7 @@ import com.github.lyd11250.bedrock.system.dto.PackageDTO;
 import com.github.lyd11250.bedrock.system.service.PackageService;
 import com.github.lyd11250.bedrock.system.vo.PackageQuotaVO;
 import com.github.lyd11250.bedrock.system.vo.PackageVO;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +27,7 @@ import java.util.List;
 /**
  * 套餐管理接口（平台超管）。套餐与 sys_menu 同为全局表，整体仅超管可用。
  */
+@Tag(name = "套餐管理")
 @RestController
 @RequestMapping("/api/v1/system/packages")
 @SaCheckRole(RbacConstants.ROLE_SUPER_ADMIN)

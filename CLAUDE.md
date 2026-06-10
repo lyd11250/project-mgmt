@@ -84,6 +84,14 @@ docker-compose.yml(.dev/.prod)  容器编排
 - Lombok：`@Data` / `@RequiredArgsConstructor`（构造器注入，**不要字段 `@Autowired`**）。
 - 密码用注入的 `BCryptPasswordEncoder` 加密存 `passwordHash`，**绝不明文落库或返回**。
 
+### 4.8 API 路径与文档（统一约定，务必遵守）
+- **URL 结构 `/api/v1/{module}/{resource}`**（模块前缀）：基座系统能力一律落在 `/api/v1/system/*`（用户 `system/users`、角色 `system/roles`、租户 `system/tenants`、认证 `system/auth`、菜单 `system/menus`、套餐 `system/packages`）。上层业务模块用各自模块名前缀（如 `/api/v1/<biz-module>/<resource>`），与 `biz/*` 包边界对齐。**新增接口按所属模块挂前缀，不要再写 `/api/v1/<resource>` 这种无模块前缀的扁平路径。**
+  - 唯一例外：健康检查 `GET /api/v1/ping`（平台级探针，开放、保持根级，不带模块前缀）。
+- **资源命名**：资源用复数名词（`users`/`roles`/`packages`）；子资源走层级（`/{id}/menus`、`/{id}/quotas`、`/{id}/password`）；动作语义靠 HTTP 方法（GET/POST/PUT/DELETE），不在路径里塞动词。
+- **开放接口**：免登录路径在 `SaTokenConfig.EXCLUDE_PATHS` 显式放行（如 `system/auth/login`、`ping`、Swagger 资源）。改动登录/开放接口路径时**同步更新该常量**，否则会被登录拦截器拦掉。
+- **API 文档（springdoc-openapi，G9）**：`springdoc-openapi-starter-webmvc-ui` `3.0.x`（Spring Boot 4 / Spring Framework 7 兼容线，Jackson 3）。Swagger UI 在 `/swagger-ui.html`，OpenAPI JSON 在 `/v3/api-docs`；元信息与 Sa-token 鉴权方案（apiKey + header，头名取 `sa-token.token-name`）在 `config/OpenApiConfig`。**dev 默认开启，prod 已在 `application-prod.yml` 关闭**（不对外暴露接口结构）。
+  - 新建 Controller 加 `@Tag(name="…")` 归类；接口/参数可选 `@Operation` / `@Schema` 补说明（非强制，缺省也能从签名自动生成）。
+
 ---
 
 ## 5. 前端编码规范
