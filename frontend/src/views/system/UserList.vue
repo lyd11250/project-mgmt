@@ -11,15 +11,22 @@ import {
 } from '@/api/user'
 import { listRoles, type Role } from '@/api/role'
 import { formatDateTime } from '@/utils/time'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const loading = ref(false)
 const list = ref<UserItem[]>([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, username: '' })
 const roles = ref<Role[]>([])
+const rolesLoaded = ref(false)
 
-async function loadRoles() {
+// 角色列表仅用于「新建用户 / 分配角色」的下拉，按需加载；
+// 无 system:role:list 权限（套餐未含角色管理）时跳过，避免进入页面即触发 403。
+async function ensureRoles() {
+  if (rolesLoaded.value || !auth.hasPermission('system:role:list')) return
   roles.value = await listRoles()
+  rolesLoaded.value = true
 }
 
 async function load() {
@@ -33,10 +40,7 @@ async function load() {
   }
 }
 
-onMounted(async () => {
-  await loadRoles()
-  await load()
-})
+onMounted(load)
 
 // ---- 新建用户 ----
 const createVisible = ref(false)
@@ -52,6 +56,7 @@ function openCreate() {
   createForm.password = ''
   createForm.roleIds = []
   createVisible.value = true
+  ensureRoles()
 }
 
 async function submitCreate() {
@@ -73,6 +78,7 @@ function openAssign(row: UserItem) {
   roleForm.userId = row.id
   roleForm.roleIds = row.roles.map((r) => r.id)
   roleVisible.value = true
+  ensureRoles()
 }
 
 async function submitAssign() {

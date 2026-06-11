@@ -90,10 +90,24 @@ const treeRef = ref<InstanceType<typeof ElTree>>()
 const assigning = ref<PackageItem | null>(null)
 const treeProps = { label: 'name', children: 'children' }
 
+function collectLeafIds(nodes: MenuNode[], out: Set<string>) {
+  for (const node of nodes) {
+    if (node.children?.length) {
+      collectLeafIds(node.children, out)
+    } else {
+      out.add(node.id)
+    }
+  }
+}
+
 async function openAssignMenus(row: PackageItem) {
   assigning.value = row
   menuTree.value = await getMenuTree()
-  const checked = await getPackageMenus(row.id)
+  // 存储的菜单 id 含半选父节点；仅用叶子节点回填，父节点的(半)选状态由 el-tree 自行推导，
+  // 否则把父节点传给 setCheckedKeys 会级联勾选其全部子节点。
+  const leafIds = new Set<string>()
+  collectLeafIds(menuTree.value, leafIds)
+  const checked = (await getPackageMenus(row.id)).filter((id) => leafIds.has(id))
   menuVisible.value = true
   await nextTick()
   treeRef.value?.setCheckedKeys(checked, false)
