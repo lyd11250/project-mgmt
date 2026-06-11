@@ -18,7 +18,7 @@
 
 ## 1. 项目速览
 
-**Bedrock — 多租户 SaaS 平台基座**：只做 SaaS 必备的系统能力（租户/套餐/RBAC/菜单/鉴权/多租户隔离），租户业务功能由上层业务模块（`biz/*`）扩展、**不属于基座**。模块化单体（当前不拆微服务）。
+**Bedrock — 多租户 SaaS 平台基座**：只做 SaaS 必备的系统能力（租户/套餐/RBAC/菜单/鉴权/多租户隔离），租户业务功能由上层业务模块（`biz/*`）扩展、**不属于基座**。模块化单体（当前不拆微服务）。上层业务模块的接入范式与活样板见 [业务模块接入规范.md](业务模块接入规范.md)（样板模块 `biz/party` 相关方主数据）。
 
 - **前端**：Vue3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + Axios
 - **后端**：Spring Boot **4.0.6**（Spring Framework 7 / JDK 17）+ MyBatis-Plus + Sa-token + Flyway
