@@ -78,6 +78,10 @@ public class UserService {
             user.setStatus(dto.getStatus());
         }
         userMapper.updateById(user);
+        // 停用用户后主动踢出其全部在线会话，避免既有登录态在 timeout 内继续可用
+        if (dto.getStatus() != null && dto.getStatus() == 0) {
+            StpUtil.kickout(id);
+        }
     }
 
     @Transactional
@@ -86,6 +90,8 @@ public class UserService {
         userMapper.deleteById(id);
         userRoleMapper.delete(Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getUserId, id));
         permissionCache.evictUserInCurrentTenant(id);
+        // 删除用户后踢出其全部在线会话
+        StpUtil.kickout(id);
     }
 
     @Transactional
@@ -93,6 +99,8 @@ public class UserService {
         SysUser user = requireUser(id);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         userMapper.updateById(user);
+        // 管理员重置密码后强制该用户重新登录
+        StpUtil.kickout(id);
     }
 
     @Transactional

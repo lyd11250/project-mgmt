@@ -27,7 +27,7 @@ mybatis-plus:
 sa-token:
   token-name: satoken
   timeout: 2592000        # 会话有效期 30 天
-  active-timeout: -1
+  active-timeout: 7200    # 闲置 2 小时无操作自动失效（每次请求自动续期活跃时间）
   is-concurrent: true
   is-share: false
   token-style: uuid
