@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 系统用户（可绑定 person，person 不必有登录账号）。
+ * 系统用户。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -19,7 +19,4 @@ public class SysUser extends BaseEntity {
 
     /** 状态：1 启用，0 停用。 */
     private Integer status;
-
-    /** 可选绑定的人员 ID。 */
-    private Long personId;
 }

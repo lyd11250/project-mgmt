@@ -17,8 +17,6 @@ public class UserVO {
 
     private Integer status;
 
-    private Long personId;
-
     private List<RoleVO> roles;
 
     private LocalDateTime createdAt;

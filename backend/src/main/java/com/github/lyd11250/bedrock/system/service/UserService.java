@@ -58,7 +58,6 @@ public class UserService {
         user.setUsername(dto.getUsername());
         user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         user.setStatus(1);
-        user.setPersonId(dto.getPersonId());
         userMapper.insert(user);
         replaceRoles(user.getId(), dto.getRoleIds());
         return user.getId();
@@ -70,7 +69,6 @@ public class UserService {
         if (dto.getStatus() != null) {
             user.setStatus(dto.getStatus());
         }
-        user.setPersonId(dto.getPersonId());
         userMapper.updateById(user);
     }
 
@@ -122,7 +120,6 @@ public class UserService {
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setStatus(user.getStatus());
-        vo.setPersonId(user.getPersonId());
         vo.setCreatedAt(user.getCreatedAt());
         vo.setRoles(rolesOf(user.getId()));
         return vo;

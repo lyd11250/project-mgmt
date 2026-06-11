@@ -17,7 +17,6 @@ export interface UserItem {
   id: string
   username: string
   status: number
-  personId?: string
   roles: Role[]
   createdAt: string
 }
@@ -25,7 +24,6 @@ export interface UserItem {
 export interface UserCreateParams {
   username: string
   password: string
-  personId?: string
   roleIds?: string[]
 }
 
@@ -37,7 +35,7 @@ export function createUser(data: UserCreateParams) {
   return request.post<unknown, string>('/system/users', data)
 }
 
-export function updateUser(id: string, data: { status?: number; personId?: string }) {
+export function updateUser(id: string, data: { status?: number }) {
   return request.put<unknown, void>(`/system/users/${id}`, data)
 }
 
