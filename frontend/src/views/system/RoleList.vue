@@ -157,13 +157,32 @@ const treeRef = ref<InstanceType<typeof ElTree>>()
 const assigningRole = ref<Role | null>(null)
 const treeProps = { label: 'name', children: 'children' }
 
+/** 收集菜单树中所有叶子节点（无子节点）的 id。 */
+function collectLeafIds(nodes: MenuNode[], acc: Set<string>) {
+  for (const node of nodes) {
+    if (node.children && node.children.length) {
+      collectLeafIds(node.children, acc)
+    } else {
+      acc.add(node.id)
+    }
+  }
+}
+
 async function openAssignMenus(row: Role) {
   assigningRole.value = row
   menuTree.value = await getAssignableMenus()
   const checked = await getRoleMenus(row.id)
   menuVisible.value = true
   await nextTick()
-  treeRef.value?.setCheckedKeys(checked, false)
+  // 回显仅勾选叶子节点：存库的 id 包含半选父级（用于菜单导航），
+  // 若直接 setCheckedKeys 父级，el-tree 会级联勾选其全部子节点，导致「全选」假象。
+  // 父级的半选/全选状态交由 el-tree 依据叶子自动推导。
+  const leafIds = new Set<string>()
+  collectLeafIds(menuTree.value, leafIds)
+  treeRef.value?.setCheckedKeys(
+    checked.filter((id) => leafIds.has(id)),
+    false,
+  )
 }
 
 async function submitAssignMenus() {
