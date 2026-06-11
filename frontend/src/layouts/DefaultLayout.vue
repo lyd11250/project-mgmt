@@ -19,8 +19,22 @@
     </el-aside>
     <el-container>
       <el-header class="header">
-        <span>{{ auth.user?.username }}（{{ auth.roles.join(', ') }}）</span>
-        <el-button link type="primary" @click="handleLogout">退出登录</el-button>
+        <el-dropdown trigger="click" @command="handleCommand">
+          <div class="user-trigger">
+            <el-avatar :size="32" class="avatar">
+              <el-icon><Avatar /></el-icon>
+            </el-avatar>
+            <span class="user-name">{{ auth.user?.nickname || auth.user?.username }}</span>
+            <el-icon class="arrow"><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+              <el-dropdown-item command="password">修改密码</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </el-header>
       <el-main>
         <router-view />
@@ -31,12 +45,23 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { Avatar, ArrowDown } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { resetDynamicRoutes } from '@/router'
 import SideMenu from '@/components/SideMenu.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+function handleCommand(command: string) {
+  if (command === 'profile') {
+    router.push('/profile')
+  } else if (command === 'password') {
+    router.push({ path: '/profile', query: { tab: 'password' } })
+  } else if (command === 'logout') {
+    handleLogout()
+  }
+}
 
 async function handleLogout() {
   await auth.logout()
@@ -67,8 +92,25 @@ async function handleLogout() {
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
+}
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  outline: none;
+}
+.avatar {
+  background: #409eff;
+}
+.user-name {
+  font-size: 14px;
+  color: #303133;
+}
+.arrow {
+  color: #909399;
 }
 </style>

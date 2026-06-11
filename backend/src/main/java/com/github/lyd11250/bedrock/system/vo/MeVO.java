@@ -14,6 +14,8 @@ public class MeVO {
 
     private String username;
 
+    private String nickname;
+
     private Long tenantId;
 
     private List<String> roles;

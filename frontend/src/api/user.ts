@@ -16,6 +16,8 @@ export interface PageResult<T> {
 export interface UserItem {
   id: string
   username: string
+  nickname?: string
+  phone?: string
   status: number
   roles: Role[]
   createdAt: string
@@ -24,7 +26,19 @@ export interface UserItem {
 export interface UserCreateParams {
   username: string
   password: string
+  nickname?: string
+  phone?: string
   roleIds?: string[]
+}
+
+/** 个人中心资料。 */
+export interface ProfileInfo {
+  id: string
+  username: string
+  nickname?: string
+  phone?: string
+  tenantId: string
+  roles: Role[]
 }
 
 export function pageUsers(params: { page?: number; size?: number; username?: string }) {
@@ -49,4 +63,21 @@ export function resetPassword(id: string, password: string) {
 
 export function assignRoles(id: string, roleIds: string[]) {
   return request.put<unknown, void>(`/system/users/${id}/roles`, { roleIds })
+}
+
+// ---- 自助（当前登录用户）----
+
+/** 查询个人中心资料。 */
+export function getProfile() {
+  return request.get<unknown, ProfileInfo>('/system/users/me/profile')
+}
+
+/** 更新个人资料（昵称、手机号）。 */
+export function updateProfile(data: { nickname?: string; phone?: string }) {
+  return request.put<unknown, void>('/system/users/me/profile', data)
+}
+
+/** 修改自身密码（需原密码）。 */
+export function changePassword(data: { oldPassword: string; newPassword: string }) {
+  return request.put<unknown, void>('/system/users/me/password', data)
 }

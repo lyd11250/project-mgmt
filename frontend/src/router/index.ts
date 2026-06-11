@@ -10,6 +10,24 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/error/403',
+    name: 'error-403',
+    component: () => import('@/views/error/Error403.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/error/404',
+    name: 'error-404',
+    component: () => import('@/views/error/Error404.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/error/500',
+    name: 'error-500',
+    component: () => import('@/views/error/Error500.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     name: 'layout',
     component: () => import('@/layouts/DefaultLayout.vue'),
@@ -21,7 +39,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Home.vue'),
         meta: { title: '首页' },
       },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/views/profile/Profile.vue'),
+        meta: { title: '个人中心' },
+      },
     ],
+  },
+  // 兜底：未匹配的路径统一跳 404
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    redirect: '/error/404',
   },
 ]
 
@@ -47,8 +77,9 @@ function setupDynamicRoutes(menus: MenuNode[]) {
     for (const node of nodes) {
       if (node.type === 'C' && node.path && node.component) {
         const name = `menu-${node.id}`
-        const comp = resolveComponent(node.component)
-        if (comp && !router.hasRoute(name)) {
+        // 解析不到对应组件时回退到「页面缺失」占位，避免点击菜单无响应
+        const comp = resolveComponent(node.component) ?? (() => import('@/views/error/Error404.vue'))
+        if (!router.hasRoute(name)) {
           router.addRoute('layout', {
             path: node.path,
             name,
@@ -98,10 +129,10 @@ router.beforeEach(async (to) => {
     return to.fullPath
   }
   if (to.meta.role && !auth.hasRole(to.meta.role as string)) {
-    return { name: 'home' }
+    return { name: 'error-403' }
   }
   if (to.meta.permission && !auth.hasPermission(to.meta.permission as string)) {
-    return { name: 'home' }
+    return { name: 'error-403' }
   }
   return true
 })

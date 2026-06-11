@@ -69,6 +69,7 @@ public class AuthService {
         MeVO vo = new MeVO();
         vo.setUserId(userId);
         vo.setUsername(user != null ? user.getUsername() : null);
+        vo.setNickname(user != null ? user.getNickname() : null);
         Object tenantId = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
         vo.setTenantId(tenantId != null ? Long.valueOf(tenantId.toString()) : null);
         vo.setRoles(StpUtil.getRoleList());

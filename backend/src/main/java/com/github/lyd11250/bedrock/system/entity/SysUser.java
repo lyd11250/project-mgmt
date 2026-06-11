@@ -19,4 +19,10 @@ public class SysUser extends BaseEntity {
 
     /** 状态：1 启用，0 停用。 */
     private Integer status;
+
+    /** 昵称（展示名）。 */
+    private String nickname;
+
+    /** 手机号。 */
+    private String phone;
 }

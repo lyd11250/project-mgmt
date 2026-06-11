@@ -3,10 +3,13 @@ package com.github.lyd11250.bedrock.system.controller;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.lyd11250.bedrock.system.dto.AssignRolesDTO;
+import com.github.lyd11250.bedrock.system.dto.ChangePasswordDTO;
 import com.github.lyd11250.bedrock.system.dto.ResetPasswordDTO;
+import com.github.lyd11250.bedrock.system.dto.UpdateProfileDTO;
 import com.github.lyd11250.bedrock.system.dto.UserCreateDTO;
 import com.github.lyd11250.bedrock.system.dto.UserUpdateDTO;
 import com.github.lyd11250.bedrock.system.service.UserService;
+import com.github.lyd11250.bedrock.system.vo.ProfileVO;
 import com.github.lyd11250.bedrock.system.vo.UserVO;
 import com.github.lyd11250.bedrock.common.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +35,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+
+    // ---- 自助（当前登录用户，登录即可，无需额外权限）----
+
+    @GetMapping("/me/profile")
+    public Result<ProfileVO> profile() {
+        return Result.ok(userService.getProfile());
+    }
+
+    @PutMapping("/me/profile")
+    public Result<Void> updateProfile(@Valid @RequestBody UpdateProfileDTO dto) {
+        userService.updateProfile(dto);
+        return Result.ok();
+    }
+
+    @PutMapping("/me/password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changeOwnPassword(dto);
+        return Result.ok();
+    }
+
+    // ---- 管理（按权限校验）----
 
     @GetMapping
     @SaCheckPermission("system:user:list")

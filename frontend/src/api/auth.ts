@@ -14,6 +14,7 @@ export interface LoginResult {
 export interface MeInfo {
   userId: string
   username: string
+  nickname?: string
   tenantId: string
   roles: string[]
   permissions: string[]

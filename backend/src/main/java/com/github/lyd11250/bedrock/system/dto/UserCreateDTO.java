@@ -1,5 +1,6 @@
 package com.github.lyd11250.bedrock.system.dto;
 
+import com.github.lyd11250.bedrock.common.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -15,7 +16,14 @@ public class UserCreateDTO {
     private String username;
 
     @NotBlank(message = "密码不能为空")
+    @StrongPassword
     private String password;
+
+    /** 昵称（展示名）。 */
+    private String nickname;
+
+    /** 手机号。 */
+    private String phone;
 
     /** 分配的角色 ID 列表。 */
     private List<Long> roleIds;

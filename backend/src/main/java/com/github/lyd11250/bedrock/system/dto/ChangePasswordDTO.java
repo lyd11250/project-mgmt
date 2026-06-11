@@ -5,12 +5,15 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * 重置密码入参。
+ * 修改自身密码入参（自助改密，需校验原密码）。
  */
 @Data
-public class ResetPasswordDTO {
+public class ChangePasswordDTO {
+
+    @NotBlank(message = "原密码不能为空")
+    private String oldPassword;
 
     @NotBlank(message = "新密码不能为空")
     @StrongPassword
-    private String password;
+    private String newPassword;
 }

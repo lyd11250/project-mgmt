@@ -24,6 +24,8 @@
       stripe
     >
       <el-table-column prop="username" label="用户名" />
+      <el-table-column prop="nickname" label="昵称" />
+      <el-table-column prop="phone" label="手机号" />
       <el-table-column label="状态">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
@@ -91,6 +93,12 @@
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input v-model="createForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="createForm.nickname" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="createForm.phone" />
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="createForm.roleIds" multiple placeholder="选择角色" class="full">
@@ -164,15 +172,32 @@ onMounted(load)
 // ---- 新建用户 ----
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
-const createForm = reactive({ username: '', password: '', roleIds: [] as string[] })
+const createForm = reactive({
+  username: '',
+  password: '',
+  nickname: '',
+  phone: '',
+  roleIds: [] as string[],
+})
 const createRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 8, max: 64, message: '密码需 8-64 位', trigger: 'blur' },
+    {
+      pattern: /^(?=.*[A-Za-z])(?=.*\d)\S+$/,
+      message: '密码需同时包含字母和数字，且不含空格',
+      trigger: 'blur',
+    },
+  ],
+  phone: [{ pattern: /^$|^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
 }
 
 function openCreate() {
   createForm.username = ''
   createForm.password = ''
+  createForm.nickname = ''
+  createForm.phone = ''
   createForm.roleIds = []
   createVisible.value = true
   ensureRoles()
