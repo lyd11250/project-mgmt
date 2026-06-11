@@ -121,13 +121,22 @@ public class SeedService {
                 .stream().map(SysPackageMenu::getMenuId).distinct().toList();
     }
 
-    /** 从菜单 id 集合中筛出 C 型页面菜单（供普通用户只读）。 */
+    /**
+     * 普通用户（USER 角色）默认不下放的「管理类页面」perm。
+     *
+     * <p>这些页面初始仅租户管理员可见（其权限动态等于套餐边界）；普通用户如需访问，
+     * 由管理员在「角色↔菜单分配」中按需手动授予（如自建「文件管理员」角色）。
+     */
+    private static final List<String> USER_EXCLUDED_PERMS = List.of("system:file:list");
+
+    /** 从菜单 id 集合中筛出 C 型页面菜单（供普通用户只读），排除管理类页面。 */
     private List<Long> pageMenuIds(List<Long> menuIds) {
         if (menuIds.isEmpty()) {
             return List.of();
         }
         return menuMapper.selectList(Wrappers.<SysMenu>lambdaQuery()
-                        .in(SysMenu::getId, menuIds).eq(SysMenu::getType, "C"))
+                        .in(SysMenu::getId, menuIds).eq(SysMenu::getType, "C")
+                        .notIn(SysMenu::getPerm, USER_EXCLUDED_PERMS))
                 .stream().map(SysMenu::getId).toList();
     }
 }
