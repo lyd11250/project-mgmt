@@ -61,12 +61,10 @@ public class SeedService {
         TenantContext.runAs(tenantId, () -> {
             List<Long> packageMenuIds = menuIdsOfPackage(packageId);
 
-            // 租户管理员：套餐内全部菜单
+            // 租户管理员：权限动态 =「套餐边界内全部菜单」（见 PermissionCacheService.permissions），
+            // 不再快照绑定 sys_role_menu，故套餐后续扩容对存量租户管理员自动生效，无需重新分配。
             Long adminRoleId = createRole(RbacConstants.ROLE_TENANT_ADMIN, "租户管理员");
-            for (Long menuId : packageMenuIds) {
-                bindRoleMenu(adminRoleId, menuId);
-            }
-            // 普通用户：仅套餐内 C 型页面（只读）
+            // 普通用户：仅套餐内 C 型页面（只读），仍走显式分配（自建角色同理）
             Long userRoleId = createRole(RbacConstants.ROLE_USER, "普通用户");
             for (Long menuId : pageMenuIds(packageMenuIds)) {
                 bindRoleMenu(userRoleId, menuId);

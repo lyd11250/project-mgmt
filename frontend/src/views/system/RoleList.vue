@@ -18,7 +18,15 @@
       <el-table-column prop="name" label="角色名称" />
       <el-table-column label="操作">
         <template #default="{ row }">
+          <el-tooltip
+            v-if="row.code === 'TENANT_ADMIN'"
+            content="租户管理员自动拥有套餐内全部菜单，无需分配"
+            placement="top"
+          >
+            <span class="hint">套餐内全部</span>
+          </el-tooltip>
           <el-button
+            v-else
             v-permission="'system:role:assignMenu'"
             link
             type="primary"
@@ -200,5 +208,10 @@ async function submitAssignMenus() {
 <style scoped>
 .toolbar {
   margin-bottom: 12px;
+}
+.hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  margin-right: 12px;
 }
 </style>

@@ -70,6 +70,12 @@ public class PermissionCacheService {
         if (roleCodes.contains(RbacConstants.ROLE_SUPER_ADMIN) && isPlatformTenant(tenantId)) {
             return List.of(RbacConstants.PERMISSION_ALL);
         }
+        // 租户管理员：动态拥有「本租户套餐边界内全部菜单」，不依赖 sys_role_menu 快照——
+        // 套餐扩容（给套餐加菜单）即时对存量租户管理员生效，无需重新分配菜单。
+        // 普通用户 / 自建角色仍走显式分配（assignedPerms ∩ boundary）。
+        if (roleCodes.contains(RbacConstants.ROLE_TENANT_ADMIN)) {
+            return List.copyOf(boundaryPermsOfTenant(tenantId));
+        }
 
         // 角色分配的菜单 perm
         List<Long> assignedMenuIds = roleMenuMapper.selectList(
