@@ -1,3 +1,125 @@
+<template>
+  <el-card>
+    <div class="toolbar">
+      <el-button v-permission="'system:package:create'" type="success" @click="openCreate"
+        >新建套餐</el-button
+      >
+    </div>
+
+    <el-table v-loading="loading" :data="list" border stripe>
+      <el-table-column prop="name" label="套餐名称" />
+      <el-table-column prop="code" label="套餐编码" />
+      <el-table-column prop="remark" label="说明" />
+      <el-table-column label="操作" width="320">
+        <template #default="{ row }">
+          <el-button
+            v-permission="'system:package:assignMenu'"
+            link
+            type="primary"
+            @click="openAssignMenus(row)"
+          >
+            分配菜单
+          </el-button>
+          <el-button
+            v-permission="'system:package:quota'"
+            link
+            type="primary"
+            @click="openQuotas(row)"
+          >
+            配置配额
+          </el-button>
+          <el-button
+            v-permission="'system:package:update'"
+            link
+            type="primary"
+            @click="openEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            v-permission="'system:package:delete'"
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 新建 / 编辑 -->
+    <el-dialog v-model="editVisible" :title="editing ? '编辑套餐' : '新建套餐'" width="420px">
+      <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+        <el-form-item label="编码" prop="code">
+          <el-input v-model="form.code" :disabled="!!editing" placeholder="全局唯一，如 PRO" />
+        </el-form-item>
+        <el-form-item label="说明">
+          <el-input v-model="form.remark" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 分配菜单 -->
+    <el-dialog v-model="menuVisible" title="分配菜单" width="420px">
+      <el-tree
+        ref="treeRef"
+        :data="menuTree"
+        :props="treeProps"
+        node-key="id"
+        show-checkbox
+        default-expand-all
+      />
+      <template #footer>
+        <el-button @click="menuVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitAssignMenus">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 配置配额 -->
+    <el-dialog
+      v-model="quotaVisible"
+      :title="`配置配额${quotaPackage ? ' - ' + quotaPackage.name : ''}`"
+      width="520px"
+    >
+      <el-table v-loading="quotaLoading" :data="quotaRows" border>
+        <el-table-column prop="quotaName" label="配额名称" min-width="140" />
+        <el-table-column prop="quotaKey" label="标识" min-width="140" />
+        <el-table-column label="上限值" width="180">
+          <template #default="{ row }">
+            <el-input-number
+              v-model="row.input"
+              :min="0"
+              controls-position="right"
+              placeholder="留空=不限"
+            />
+          </template>
+        </el-table-column>
+      </el-table>
+      <p v-if="!quotaLoading && !quotaRows.length" class="hint">暂无配额定义</p>
+      <p class="hint">上限值留空表示不限。</p>
+      <template #footer>
+        <el-button @click="quotaVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="quotaSaving"
+          :disabled="!quotaRows.length"
+          @click="submitQuotas"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
+  </el-card>
+</template>
+
 <script setup lang="ts">
 import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, ElTree, type FormInstance, type FormRules } from 'element-plus'
@@ -160,86 +282,6 @@ async function submitQuotas() {
   }
 }
 </script>
-
-<template>
-  <el-card>
-    <div class="toolbar">
-      <el-button v-permission="'system:package:create'" type="success" @click="openCreate">新建套餐</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="name" label="套餐名称" />
-      <el-table-column prop="code" label="套餐编码" />
-      <el-table-column prop="remark" label="说明" />
-      <el-table-column label="操作" width="320">
-        <template #default="{ row }">
-          <el-button v-permission="'system:package:assignMenu'" link type="primary" @click="openAssignMenus(row)">
-            分配菜单
-          </el-button>
-          <el-button v-permission="'system:package:quota'" link type="primary" @click="openQuotas(row)">
-            配置配额
-          </el-button>
-          <el-button v-permission="'system:package:update'" link type="primary" @click="openEdit(row)">
-            编辑
-          </el-button>
-          <el-button v-permission="'system:package:delete'" link type="danger" @click="handleDelete(row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <!-- 新建 / 编辑 -->
-    <el-dialog v-model="editVisible" :title="editing ? '编辑套餐' : '新建套餐'" width="420px">
-      <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item label="编码" prop="code">
-          <el-input v-model="form.code" :disabled="!!editing" placeholder="全局唯一，如 PRO" />
-        </el-form-item>
-        <el-form-item label="说明">
-          <el-input v-model="form.remark" type="textarea" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 分配菜单 -->
-    <el-dialog v-model="menuVisible" title="分配菜单" width="420px">
-      <el-tree ref="treeRef" :data="menuTree" :props="treeProps" node-key="id"
-        show-checkbox default-expand-all />
-      <template #footer>
-        <el-button @click="menuVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssignMenus">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 配置配额 -->
-    <el-dialog v-model="quotaVisible" :title="`配置配额${quotaPackage ? ' - ' + quotaPackage.name : ''}`" width="520px">
-      <el-table v-loading="quotaLoading" :data="quotaRows" border>
-        <el-table-column prop="quotaName" label="配额名称" min-width="140" />
-        <el-table-column prop="quotaKey" label="标识" min-width="140" />
-        <el-table-column label="上限值" width="180">
-          <template #default="{ row }">
-            <el-input-number v-model="row.input" :min="0" controls-position="right" placeholder="留空=不限" />
-          </template>
-        </el-table-column>
-      </el-table>
-      <p v-if="!quotaLoading && !quotaRows.length" class="hint">暂无配额定义</p>
-      <p class="hint">上限值留空表示不限。</p>
-      <template #footer>
-        <el-button @click="quotaVisible = false">取消</el-button>
-        <el-button type="primary" :loading="quotaSaving" :disabled="!quotaRows.length" @click="submitQuotas">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
-  </el-card>
-</template>
 
 <style scoped>
 .toolbar {

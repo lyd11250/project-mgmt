@@ -1,3 +1,115 @@
+<template>
+  <el-card>
+    <div class="toolbar">
+      <el-input
+        v-model="query.username"
+        placeholder="用户名"
+        clearable
+        class="search"
+        @keyup.enter="load"
+        @clear="load"
+      />
+      <el-button type="primary" @click="load">查询</el-button>
+      <el-button v-permission="'system:user:create'" type="success" @click="openCreate"
+        >新建用户</el-button
+      >
+    </div>
+
+    <el-table v-loading="loading" :data="list" border stripe>
+      <el-table-column prop="username" label="用户名" />
+      <el-table-column label="状态" width="90">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 1 ? 'success' : 'info'">
+            {{ row.status === 1 ? '启用' : '停用' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="角色">
+        <template #default="{ row }">
+          <el-tag v-for="r in row.roles" :key="r.id" class="role-tag">{{ r.name }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" width="180">
+        <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="260">
+        <template #default="{ row }">
+          <el-button
+            v-permission="'system:user:assignRole'"
+            link
+            type="primary"
+            @click="openAssign(row)"
+          >
+            分配角色
+          </el-button>
+          <el-button
+            v-permission="'system:user:resetPwd'"
+            link
+            type="primary"
+            @click="handleReset(row)"
+          >
+            重置密码
+          </el-button>
+          <el-button
+            v-permission="'system:user:delete'"
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-pagination
+      class="pager"
+      layout="total, prev, pager, next"
+      :total="total"
+      :page-size="query.size"
+      :current-page="query.page"
+      @current-change="
+        (p: number) => {
+          query.page = p
+          load()
+        }
+      "
+    />
+
+    <!-- 新建用户 -->
+    <el-dialog v-model="createVisible" title="新建用户" width="420px">
+      <el-form ref="createRef" :model="createForm" :rules="createRules" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="createForm.username" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="createForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="createForm.roleIds" multiple placeholder="选择角色" class="full">
+            <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitCreate">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 分配角色 -->
+    <el-dialog v-model="roleVisible" title="分配角色" width="420px">
+      <el-select v-model="roleForm.roleIds" multiple placeholder="选择角色" class="full">
+        <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
+      </el-select>
+      <template #footer>
+        <el-button @click="roleVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitAssign">确定</el-button>
+      </template>
+    </el-dialog>
+  </el-card>
+</template>
+
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
@@ -106,85 +218,6 @@ async function handleDelete(row: UserItem) {
   await load()
 }
 </script>
-
-<template>
-  <el-card>
-    <div class="toolbar">
-      <el-input v-model="query.username" placeholder="用户名" clearable class="search"
-        @keyup.enter="load" @clear="load" />
-      <el-button type="primary" @click="load">查询</el-button>
-      <el-button v-permission="'system:user:create'" type="success" @click="openCreate">新建用户</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="username" label="用户名" />
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '停用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="角色">
-        <template #default="{ row }">
-          <el-tag v-for="r in row.roles" :key="r.id" class="role-tag">{{ r.name }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="180">
-        <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="260">
-        <template #default="{ row }">
-          <el-button v-permission="'system:user:assignRole'" link type="primary" @click="openAssign(row)">
-            分配角色
-          </el-button>
-          <el-button v-permission="'system:user:resetPwd'" link type="primary" @click="handleReset(row)">
-            重置密码
-          </el-button>
-          <el-button v-permission="'system:user:delete'" link type="danger" @click="handleDelete(row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-pagination class="pager" layout="total, prev, pager, next" :total="total"
-      :page-size="query.size" :current-page="query.page"
-      @current-change="(p: number) => { query.page = p; load() }" />
-
-    <!-- 新建用户 -->
-    <el-dialog v-model="createVisible" title="新建用户" width="420px">
-      <el-form ref="createRef" :model="createForm" :rules="createRules" label-width="80px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="createForm.username" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" show-password />
-        </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="createForm.roleIds" multiple placeholder="选择角色" class="full">
-            <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitCreate">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 分配角色 -->
-    <el-dialog v-model="roleVisible" title="分配角色" width="420px">
-      <el-select v-model="roleForm.roleIds" multiple placeholder="选择角色" class="full">
-        <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
-      </el-select>
-      <template #footer>
-        <el-button @click="roleVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssign">确定</el-button>
-      </template>
-    </el-dialog>
-  </el-card>
-</template>
 
 <style scoped>
 .toolbar {

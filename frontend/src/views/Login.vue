@@ -1,3 +1,27 @@
+<template>
+  <div class="login">
+    <el-card class="login-card">
+      <h2 class="title">项目协作平台</h2>
+      <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleSubmit">
+        <el-form-item prop="tenantCode">
+          <el-input v-model="form.tenantCode" placeholder="租户编码" />
+        </el-form-item>
+        <el-form-item prop="username">
+          <el-input v-model="form.username" placeholder="用户名" />
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="form.password" type="password" placeholder="密码" show-password />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" :loading="loading" class="submit" @click="handleSubmit">
+            登录
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -39,30 +63,6 @@ async function handleSubmit() {
   })
 }
 </script>
-
-<template>
-  <div class="login">
-    <el-card class="login-card">
-      <h2 class="title">项目协作平台</h2>
-      <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleSubmit">
-        <el-form-item prop="tenantCode">
-          <el-input v-model="form.tenantCode" placeholder="租户编码" />
-        </el-form-item>
-        <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="密码" show-password />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="loading" class="submit" @click="handleSubmit">
-            登录
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-  </div>
-</template>
 
 <style scoped>
 .login {

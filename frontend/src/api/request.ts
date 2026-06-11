@@ -27,6 +27,8 @@ request.interceptors.request.use((config) => {
 
 // 响应拦截：解包 { code, message, data }，统一错误处理
 request.interceptors.response.use(
+  // 拦截器直接返回解包后的 data，刻意突破 axios 的响应类型契约
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (response): any => {
     const body = response.data as ApiResult
     if (body.code === 0) {

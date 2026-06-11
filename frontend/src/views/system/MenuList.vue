@@ -1,3 +1,101 @@
+<template>
+  <el-card>
+    <div class="toolbar">
+      <el-button v-permission="'system:menu:create'" type="success" @click="openCreate"
+        >新建菜单</el-button
+      >
+    </div>
+
+    <el-table
+      v-loading="loading"
+      :data="tree"
+      row-key="id"
+      border
+      default-expand-all
+      :tree-props="{ children: 'children' }"
+    >
+      <el-table-column prop="name" label="名称" />
+      <el-table-column label="类型" width="80">
+        <template #default="{ row }">{{ typeLabel(row.type) }}</template>
+      </el-table-column>
+      <el-table-column prop="perm" label="权限码" />
+      <el-table-column prop="path" label="路由" />
+      <el-table-column prop="sort" label="排序" width="70" />
+      <el-table-column label="操作" width="240">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.type !== 'F'"
+            v-permission="'system:menu:create'"
+            link
+            type="primary"
+            @click="openCreateChild(row)"
+          >
+            新增子项
+          </el-button>
+          <el-button v-permission="'system:menu:update'" link type="primary" @click="openEdit(row)">
+            编辑
+          </el-button>
+          <el-button
+            v-permission="'system:menu:delete'"
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-dialog v-model="editVisible" :title="editingId ? '编辑菜单' : '新建菜单'" width="520px">
+      <el-form ref="editRef" :model="form" :rules="rules" label-width="90px">
+        <el-form-item label="上级菜单">
+          <el-select v-model="form.parentId" class="full">
+            <el-option
+              v-for="o in parentOptions"
+              :key="o.value"
+              :label="o.label"
+              :value="o.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="类型" prop="type">
+          <el-radio-group v-model="form.type">
+            <el-radio value="M">目录</el-radio>
+            <el-radio value="C">菜单</el-radio>
+            <el-radio value="F">按钮</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+        <el-form-item v-if="form.type !== 'F'" label="路由路径">
+          <el-input v-model="form.path" placeholder="如 /system/users" />
+        </el-form-item>
+        <el-form-item v-if="form.type === 'C'" label="组件">
+          <el-input v-model="form.component" placeholder="如 system/UserList" />
+        </el-form-item>
+        <el-form-item v-if="form.type !== 'F'" label="图标">
+          <el-input v-model="form.icon" placeholder="Element Plus 图标名，如 Setting" />
+        </el-form-item>
+        <el-form-item v-if="form.type !== 'M'" label="权限码">
+          <el-input v-model="form.perm" placeholder="模块:资源:动作，如 system:user:create" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="form.sort" :min="0" />
+        </el-form-item>
+        <el-form-item label="显示">
+          <el-switch v-model="form.visible" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit">确定</el-button>
+      </template>
+    </el-dialog>
+  </el-card>
+</template>
+
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
@@ -25,7 +123,10 @@ async function load() {
 onMounted(load)
 
 // 扁平化为父级下拉选项（含层级缩进）
-interface Option { value: string; label: string }
+interface Option {
+  value: string
+  label: string
+}
 const parentOptions = computed<Option[]>(() => {
   const opts: Option[] = [{ value: '0', label: '顶级' }]
   const walk = (nodes: MenuNode[], depth: number) => {
@@ -122,81 +223,6 @@ async function handleDelete(row: MenuNode) {
   await load()
 }
 </script>
-
-<template>
-  <el-card>
-    <div class="toolbar">
-      <el-button v-permission="'system:menu:create'" type="success" @click="openCreate">新建菜单</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="tree" row-key="id" border default-expand-all
-      :tree-props="{ children: 'children' }">
-      <el-table-column prop="name" label="名称" />
-      <el-table-column label="类型" width="80">
-        <template #default="{ row }">{{ typeLabel(row.type) }}</template>
-      </el-table-column>
-      <el-table-column prop="perm" label="权限码" />
-      <el-table-column prop="path" label="路由" />
-      <el-table-column prop="sort" label="排序" width="70" />
-      <el-table-column label="操作" width="240">
-        <template #default="{ row }">
-          <el-button v-if="row.type !== 'F'" v-permission="'system:menu:create'" link type="primary"
-            @click="openCreateChild(row)">
-            新增子项
-          </el-button>
-          <el-button v-permission="'system:menu:update'" link type="primary" @click="openEdit(row)">
-            编辑
-          </el-button>
-          <el-button v-permission="'system:menu:delete'" link type="danger" @click="handleDelete(row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-dialog v-model="editVisible" :title="editingId ? '编辑菜单' : '新建菜单'" width="520px">
-      <el-form ref="editRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="上级菜单">
-          <el-select v-model="form.parentId" class="full">
-            <el-option v-for="o in parentOptions" :key="o.value" :label="o.label" :value="o.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-radio-group v-model="form.type">
-            <el-radio value="M">目录</el-radio>
-            <el-radio value="C">菜单</el-radio>
-            <el-radio value="F">按钮</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item v-if="form.type !== 'F'" label="路由路径">
-          <el-input v-model="form.path" placeholder="如 /system/users" />
-        </el-form-item>
-        <el-form-item v-if="form.type === 'C'" label="组件">
-          <el-input v-model="form.component" placeholder="如 system/UserList" />
-        </el-form-item>
-        <el-form-item v-if="form.type !== 'F'" label="图标">
-          <el-input v-model="form.icon" placeholder="Element Plus 图标名，如 Setting" />
-        </el-form-item>
-        <el-form-item v-if="form.type !== 'M'" label="权限码">
-          <el-input v-model="form.perm" placeholder="模块:资源:动作，如 system:user:create" />
-        </el-form-item>
-        <el-form-item label="排序">
-          <el-input-number v-model="form.sort" :min="0" />
-        </el-form-item>
-        <el-form-item label="显示">
-          <el-switch v-model="form.visible" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">确定</el-button>
-      </template>
-    </el-dialog>
-  </el-card>
-</template>
 
 <style scoped>
 .toolbar {

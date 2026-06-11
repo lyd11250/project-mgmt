@@ -1,3 +1,73 @@
+<template>
+  <el-card>
+    <div class="toolbar">
+      <el-button v-permission="'system:role:create'" type="success" @click="openCreate"
+        >新建角色</el-button
+      >
+    </div>
+
+    <el-table v-loading="loading" :data="list" border stripe>
+      <el-table-column prop="code" label="角色码" />
+      <el-table-column prop="name" label="角色名称" />
+      <el-table-column label="操作" width="280">
+        <template #default="{ row }">
+          <el-button
+            v-permission="'system:role:assignMenu'"
+            link
+            type="primary"
+            @click="openAssignMenus(row)"
+          >
+            分配菜单
+          </el-button>
+          <el-button v-permission="'system:role:update'" link type="primary" @click="openEdit(row)">
+            编辑
+          </el-button>
+          <el-button
+            v-permission="'system:role:delete'"
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 新建 / 编辑 -->
+    <el-dialog v-model="editVisible" :title="editing ? '编辑角色' : '新建角色'" width="420px">
+      <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="角色码" prop="code">
+          <el-input v-model="form.code" :disabled="!!editing" placeholder="租户内唯一，如 EDITOR" />
+        </el-form-item>
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 分配菜单 -->
+    <el-dialog v-model="menuVisible" title="分配菜单" width="420px">
+      <el-tree
+        ref="treeRef"
+        :data="menuTree"
+        :props="treeProps"
+        node-key="id"
+        show-checkbox
+        default-expand-all
+      />
+      <template #footer>
+        <el-button @click="menuVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitAssignMenus">确定</el-button>
+      </template>
+    </el-dialog>
+  </el-card>
+</template>
+
 <script setup lang="ts">
 import { nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, ElTree, type FormInstance, type FormRules } from 'element-plus'
@@ -100,58 +170,6 @@ async function submitAssignMenus() {
   menuVisible.value = false
 }
 </script>
-
-<template>
-  <el-card>
-    <div class="toolbar">
-      <el-button v-permission="'system:role:create'" type="success" @click="openCreate">新建角色</el-button>
-    </div>
-
-    <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="code" label="角色码" />
-      <el-table-column prop="name" label="角色名称" />
-      <el-table-column label="操作" width="280">
-        <template #default="{ row }">
-          <el-button v-permission="'system:role:assignMenu'" link type="primary" @click="openAssignMenus(row)">
-            分配菜单
-          </el-button>
-          <el-button v-permission="'system:role:update'" link type="primary" @click="openEdit(row)">
-            编辑
-          </el-button>
-          <el-button v-permission="'system:role:delete'" link type="danger" @click="handleDelete(row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <!-- 新建 / 编辑 -->
-    <el-dialog v-model="editVisible" :title="editing ? '编辑角色' : '新建角色'" width="420px">
-      <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="角色码" prop="code">
-          <el-input v-model="form.code" :disabled="!!editing" placeholder="租户内唯一，如 EDITOR" />
-        </el-form-item>
-        <el-form-item label="名称" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 分配菜单 -->
-    <el-dialog v-model="menuVisible" title="分配菜单" width="420px">
-      <el-tree ref="treeRef" :data="menuTree" :props="treeProps" node-key="id"
-        show-checkbox default-expand-all />
-      <template #footer>
-        <el-button @click="menuVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssignMenus">确定</el-button>
-      </template>
-    </el-dialog>
-  </el-card>
-</template>
 
 <style scoped>
 .toolbar {

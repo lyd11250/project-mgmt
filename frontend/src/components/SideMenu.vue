@@ -1,10 +1,3 @@
-<script setup lang="ts">
-import type { MenuNode } from '@/api/menu'
-
-// 递归渲染导航菜单树：M 目录 → el-sub-menu，C 页面 → el-menu-item
-defineProps<{ items: MenuNode[] }>()
-</script>
-
 <template>
   <template v-for="m in items" :key="m.id">
     <el-sub-menu v-if="m.children && m.children.length" :index="String(m.id)">
@@ -20,3 +13,10 @@ defineProps<{ items: MenuNode[] }>()
     </el-menu-item>
   </template>
 </template>
+
+<script setup lang="ts">
+import type { MenuNode } from '@/api/menu'
+
+// 递归渲染导航菜单树：M 目录 → el-sub-menu，C 页面 → el-menu-item
+defineProps<{ items: MenuNode[] }>()
+</script>
