@@ -40,13 +40,11 @@ services:
       redis:
         condition: service_started
 
-  # 前端：本机 npm run build 出 dist 后上传，容器仅用 nginx 托管静态资源 + 反代 /api。
-  # 不再在容器内构建（避免跨平台 npm ci 的 lock 漂移）。dist 与 nginx.conf 以只读挂载注入。
+  # 前端：容器内多阶段构建（node 构建 → nginx 托管静态资源 + 反代 /api）。
+  # 构建在测试机 Docker（Linux）内进行，平台一致，规避跨平台 npm ci 的 lock 漂移；
+  # 前端改动随 `up -d --build` 自动重建，dist 不入库、不手动上传。
   frontend:
-    image: nginx:alpine
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    build: ./frontend
     depends_on:
       - backend
 
