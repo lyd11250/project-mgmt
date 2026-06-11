@@ -16,6 +16,7 @@ export interface MeInfo {
   username: string
   nickname?: string
   tenantId: string
+  avatarFileId?: string
   roles: string[]
   permissions: string[]
 }

@@ -25,4 +25,7 @@ public class SysUser extends BaseEntity {
 
     /** 手机号。 */
     private String phone;
+
+    /** 当前头像文件 id（引用 sys_file；空=未设置）。 */
+    private Long avatarFileId;
 }

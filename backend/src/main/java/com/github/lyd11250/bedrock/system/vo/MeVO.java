@@ -18,6 +18,9 @@ public class MeVO {
 
     private Long tenantId;
 
+    /** 当前头像文件 id（空=未设置）。 */
+    private Long avatarFileId;
+
     private List<String> roles;
 
     private List<String> permissions;

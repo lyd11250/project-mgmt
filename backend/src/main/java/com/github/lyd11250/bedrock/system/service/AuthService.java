@@ -70,6 +70,7 @@ public class AuthService {
         vo.setUserId(userId);
         vo.setUsername(user != null ? user.getUsername() : null);
         vo.setNickname(user != null ? user.getNickname() : null);
+        vo.setAvatarFileId(user != null ? user.getAvatarFileId() : null);
         Object tenantId = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
         vo.setTenantId(tenantId != null ? Long.valueOf(tenantId.toString()) : null);
         vo.setRoles(StpUtil.getRoleList());

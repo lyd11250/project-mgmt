@@ -21,6 +21,9 @@ public class ProfileVO {
 
     private Long tenantId;
 
+    /** 当前头像文件 id（空=未设置）；前端据此拼读取地址。 */
+    private Long avatarFileId;
+
     /** 角色名称列表（展示用）。 */
     private List<RoleVO> roles;
 }

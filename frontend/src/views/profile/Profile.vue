@@ -11,6 +11,21 @@
             label-width="90px"
             class="form"
           >
+            <el-form-item label="头像">
+              <div class="avatar-edit">
+                <el-avatar :size="72" :src="auth.avatarObjectUrl || undefined">
+                  <el-icon :size="32"><Avatar /></el-icon>
+                </el-avatar>
+                <el-upload
+                  :show-file-list="false"
+                  :http-request="customUploadAvatar"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                >
+                  <el-button :loading="savingAvatar">更换头像</el-button>
+                </el-upload>
+                <span class="muted">支持 JPG/PNG/WEBP/GIF，不超过 2MB</span>
+              </div>
+            </el-form-item>
             <el-form-item label="用户名">
               <el-input :value="profile?.username" disabled />
             </el-form-item>
@@ -61,8 +76,20 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { changePassword, getProfile, updateProfile, type ProfileInfo } from '@/api/user'
+import { Avatar } from '@element-plus/icons-vue'
+import {
+  ElMessage,
+  type FormInstance,
+  type FormRules,
+  type UploadRequestOptions,
+} from 'element-plus'
+import {
+  changePassword,
+  getProfile,
+  updateProfile,
+  uploadAvatar,
+  type ProfileInfo,
+} from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { resetDynamicRoutes } from '@/router'
 
@@ -96,6 +123,32 @@ async function loadProfile() {
 }
 
 onMounted(loadProfile)
+
+// ---- 头像 ----
+const savingAvatar = ref(false)
+
+/** 接管 el-upload：前端校验类型/大小后调上传接口，成功后刷新头像与顶栏。 */
+async function customUploadAvatar(options: UploadRequestOptions) {
+  const file = options.file as File
+  const okType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)
+  if (!okType) {
+    ElMessage.error('头像仅支持 JPG/PNG/WEBP/GIF 格式')
+    return
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('头像大小不能超过 2MB')
+    return
+  }
+  savingAvatar.value = true
+  try {
+    await uploadAvatar(file)
+    // fetchMe 会重新拉取 avatarFileId 并刷新顶栏与个人中心展示用的 objectURL
+    await auth.fetchMe()
+    ElMessage.success('头像已更新')
+  } finally {
+    savingAvatar.value = false
+  }
+}
 
 async function submitProfile() {
   if (!profileRef.value) return
@@ -174,5 +227,13 @@ async function submitPassword() {
 }
 .muted {
   color: #909399;
+}
+.avatar-edit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar-edit .muted {
+  font-size: 12px;
 }
 </style>

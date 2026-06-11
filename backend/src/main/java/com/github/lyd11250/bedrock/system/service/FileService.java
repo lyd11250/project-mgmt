@@ -41,6 +41,16 @@ public class FileService {
     }
 
     public FileVO upload(MultipartFile file, String bizType) {
+        return toVO(storeFile(file, bizType));
+    }
+
+    /**
+     * 落库一个上传文件并返回元数据实体（供文件管理台与各业务场景，如用户头像，复用）。
+     *
+     * <p>含扩展名白名单校验、存储配额校验、写 MinIO + 写 {@code sys_file}。
+     * 业务方据返回实体的 {@code id} 关联到自身记录。
+     */
+    public SysFile storeFile(MultipartFile file, String bizType) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("上传文件不能为空");
         }
@@ -67,11 +77,24 @@ public class FileService {
         entity.setSha256(stored.sha256());
         entity.setBizType(bizType);
         fileMapper.insert(entity);
-        return toVO(entity);
+        return entity;
     }
 
     public DownloadFile download(Long id) {
-        SysFile entity = require(id);
+        return openFile(require(id));
+    }
+
+    /** 按文件 id 打开内容流（用于内联展示，如头像）。返回的流由调用方关闭。 */
+    public DownloadFile loadInline(Long id) {
+        return openFile(require(id));
+    }
+
+    /** 软删一条文件元数据（物理对象留待定时任务清理）；用于换头像时清理旧图。 */
+    public void softDelete(Long id) {
+        fileMapper.deleteById(id);
+    }
+
+    private DownloadFile openFile(SysFile entity) {
         InputStream in = storageProvider.load(entity.getObjectKey());
         return new DownloadFile(entity.getOriginalName(), entity.getContentType(),
                 entity.getSizeBytes() == null ? -1 : entity.getSizeBytes(), in);

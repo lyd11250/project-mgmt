@@ -42,6 +42,11 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final QuotaService quotaService;
     private final PermissionCacheService permissionCache;
+    private final FileService fileService;
+
+    /** 允许的头像图片类型。 */
+    private static final java.util.Set<String> AVATAR_CONTENT_TYPES =
+            java.util.Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
     public IPage<UserVO> page(long current, long size, String username) {
         Page<SysUser> page = userMapper.selectPage(Page.of(current, size),
@@ -121,8 +126,42 @@ public class UserService {
         vo.setPhone(user.getPhone());
         Object tenantId = StpUtil.getSession().get(TenantLineHandlerImpl.SESSION_TENANT_ID);
         vo.setTenantId(tenantId != null ? Long.valueOf(tenantId.toString()) : null);
+        vo.setAvatarFileId(user.getAvatarFileId());
         vo.setRoles(rolesOf(user.getId()));
         return vo;
+    }
+
+    /** 个人中心：上传/更换当前登录用户头像，返回新头像文件 id。 */
+    @Transactional
+    public Long updateAvatar(org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("头像文件不能为空");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !AVATAR_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            throw new BusinessException("头像仅支持 JPG/PNG/WEBP/GIF 格式");
+        }
+        SysUser user = requireUser(StpUtil.getLoginIdAsLong());
+        Long oldAvatarId = user.getAvatarFileId();
+
+        Long newAvatarId = fileService.storeFile(file, "system:user:avatar").getId();
+        user.setAvatarFileId(newAvatarId);
+        userMapper.updateById(user);
+
+        // 软删旧头像记录（物理对象留待定时任务清理）
+        if (oldAvatarId != null) {
+            fileService.softDelete(oldAvatarId);
+        }
+        return newAvatarId;
+    }
+
+    /** 读取指定用户的头像文件流（本租户内可见，租户隔离由插件保证）。 */
+    public FileService.DownloadFile getAvatar(Long userId) {
+        SysUser user = requireUser(userId);
+        if (user.getAvatarFileId() == null) {
+            throw new BusinessException(com.github.lyd11250.bedrock.common.ResultCode.NOT_FOUND.getCode(), "用户未设置头像");
+        }
+        return fileService.loadInline(user.getAvatarFileId());
     }
 
     /** 个人中心：更新当前登录用户资料（仅昵称、手机号）。 */

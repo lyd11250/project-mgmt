@@ -22,7 +22,7 @@
         <Breadcrumb />
         <el-dropdown trigger="click" @command="handleCommand">
           <div class="user-trigger">
-            <el-avatar :size="32" class="avatar">
+            <el-avatar :size="32" class="avatar" :src="auth.avatarObjectUrl || undefined">
               <el-icon><Avatar /></el-icon>
             </el-avatar>
             <span class="user-name">{{ auth.user?.nickname || auth.user?.username }}</span>

@@ -8,6 +8,7 @@ import com.github.lyd11250.bedrock.system.dto.ResetPasswordDTO;
 import com.github.lyd11250.bedrock.system.dto.UpdateProfileDTO;
 import com.github.lyd11250.bedrock.system.dto.UserCreateDTO;
 import com.github.lyd11250.bedrock.system.dto.UserUpdateDTO;
+import com.github.lyd11250.bedrock.system.service.FileService;
 import com.github.lyd11250.bedrock.system.service.UserService;
 import com.github.lyd11250.bedrock.system.vo.ProfileVO;
 import com.github.lyd11250.bedrock.system.vo.UserVO;
@@ -15,6 +16,10 @@ import com.github.lyd11250.bedrock.common.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 用户管理接口（租户内，按权限校验）。
@@ -53,6 +59,28 @@ public class UserController {
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         userService.changeOwnPassword(dto);
         return Result.ok();
+    }
+
+    /** 上传/更换当前登录用户头像，返回新头像文件 id。 */
+    @PutMapping("/me/avatar")
+    public Result<Long> updateAvatar(@RequestParam("file") MultipartFile file) {
+        return Result.ok(userService.updateAvatar(file));
+    }
+
+    /** 读取指定用户头像（本租户登录可见）；内联返回图片流，供 &lt;img&gt; 显示。 */
+    @GetMapping("/{id}/avatar")
+    public ResponseEntity<InputStreamResource> avatar(@PathVariable Long id) {
+        FileService.DownloadFile d = userService.getAvatar(id);
+        MediaType mediaType = d.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(d.contentType());
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .contentType(mediaType);
+        if (d.size() >= 0) {
+            builder.contentLength(d.size());
+        }
+        return builder.body(new InputStreamResource(d.content()));
     }
 
     // ---- 管理（按权限校验）----
