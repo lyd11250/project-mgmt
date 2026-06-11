@@ -36,13 +36,7 @@
 
         <!-- 修改密码 -->
         <el-tab-pane label="修改密码" name="password">
-          <el-form
-            ref="pwdRef"
-            :model="pwdForm"
-            :rules="pwdRules"
-            label-width="90px"
-            class="form"
-          >
+          <el-form ref="pwdRef" :model="pwdForm" :rules="pwdRules" label-width="90px" class="form">
             <el-form-item label="原密码" prop="oldPassword">
               <el-input v-model="pwdForm.oldPassword" type="password" show-password />
             </el-form-item>
@@ -65,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { changePassword, getProfile, updateProfile, type ProfileInfo } from '@/api/user'
@@ -75,7 +69,15 @@ import { resetDynamicRoutes } from '@/router'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const activeTab = ref(route.query.tab === 'password' ? 'password' : 'basic')
+
+// 标签页以 URL query 为唯一数据源：读取走 query，切换走 router.replace。
+// 这样顶栏入口（改 query）与手动点击标签（改 query）走同一条路径，URL 与标签始终一致。
+const activeTab = computed({
+  get: () => (route.query.tab === 'password' ? 'password' : 'basic'),
+  set: (tab) => {
+    router.replace({ path: '/profile', query: { tab } })
+  },
+})
 
 // ---- 基本资料 ----
 const profile = ref<ProfileInfo | null>(null)

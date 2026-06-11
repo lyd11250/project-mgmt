@@ -55,7 +55,7 @@ const auth = useAuthStore()
 
 function handleCommand(command: string) {
   if (command === 'profile') {
-    router.push('/profile')
+    router.push({ path: '/profile', query: { tab: 'basic' } })
   } else if (command === 'password') {
     router.push({ path: '/profile', query: { tab: 'password' } })
   } else if (command === 'logout') {
