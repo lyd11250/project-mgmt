@@ -33,4 +33,7 @@ public class MenuDTO {
     private Integer visible;
 
     private Integer status;
+
+    /** 页面是否启用前端缓存(keep-alive)：1 是，0 否。 */
+    private Integer keepAlive;
 }

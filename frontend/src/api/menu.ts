@@ -14,6 +14,8 @@ export interface MenuNode {
   sort?: number
   visible?: number
   status?: number
+  /** 页面是否启用前端缓存(keep-alive)：1 是，0 否。 */
+  keepAlive?: number
   children?: MenuNode[]
 }
 
@@ -28,6 +30,8 @@ export interface MenuParams {
   sort?: number
   visible?: number
   status?: number
+  /** 页面是否启用前端缓存(keep-alive)：1 是，0 否。 */
+  keepAlive?: number
 }
 
 /** 当前用户导航菜单树（动态导航/路由）。 */

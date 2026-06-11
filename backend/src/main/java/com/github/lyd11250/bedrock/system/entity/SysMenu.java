@@ -41,4 +41,7 @@ public class SysMenu extends GlobalBaseEntity {
 
     /** 状态：1 启用，0 停用。 */
     private Integer status;
+
+    /** 页面是否启用前端缓存(keep-alive)：1 是，0 否（仅 C 型有意义）。 */
+    private Integer keepAlive;
 }

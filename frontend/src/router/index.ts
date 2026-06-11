@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useTabsStore } from '@/stores/tabs'
 import type { MenuNode } from '@/api/menu'
 
 const routes: RouteRecordRaw[] = [
@@ -78,13 +79,20 @@ function setupDynamicRoutes(menus: MenuNode[]) {
       if (node.type === 'C' && node.path && node.component) {
         const name = `menu-${node.id}`
         // 解析不到对应组件时回退到「页面缺失」占位，避免点击菜单无响应
-        const comp = resolveComponent(node.component) ?? (() => import('@/views/error/Error404.vue'))
+        const rawLoader =
+          resolveComponent(node.component) ?? (() => import('@/views/error/Error404.vue'))
+        // 给组件注入 name（取路由名），使 <keep-alive :include> 可按名命中缓存
+        const comp = async () => {
+          const mod = (await rawLoader()) as { default: { name?: string } }
+          if (mod.default && !mod.default.name) mod.default.name = name
+          return mod
+        }
         if (!router.hasRoute(name)) {
           router.addRoute('layout', {
             path: node.path,
             name,
             component: comp,
-            meta: { title: node.name, permission: node.perm },
+            meta: { title: node.name, permission: node.perm, keepAlive: node.keepAlive === 1 },
           })
           dynamicNames.push(name)
         }
@@ -135,6 +143,13 @@ router.beforeEach(async (to) => {
     return { name: 'error-403' }
   }
   return true
+})
+
+// 全局后置钩子：导航完成后把目标页记入页签栏（公开页/错误页除外）
+router.afterEach((to) => {
+  if (to.meta.public || !to.name) return
+  const tabs = useTabsStore()
+  tabs.addView(to)
 })
 
 export default router

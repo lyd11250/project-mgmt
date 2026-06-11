@@ -19,6 +19,7 @@
     </el-aside>
     <el-container>
       <el-header class="header">
+        <Breadcrumb />
         <el-dropdown trigger="click" @command="handleCommand">
           <div class="user-trigger">
             <el-avatar :size="32" class="avatar">
@@ -36,8 +37,13 @@
           </template>
         </el-dropdown>
       </el-header>
+      <TabsView />
       <el-main>
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="tabs.cachedViews">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
@@ -47,11 +53,15 @@
 import { useRouter } from 'vue-router'
 import { Avatar, ArrowDown } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useTabsStore } from '@/stores/tabs'
 import { resetDynamicRoutes } from '@/router'
 import SideMenu from '@/components/SideMenu.vue'
+import Breadcrumb from '@/components/Breadcrumb.vue'
+import TabsView from '@/components/TabsView.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const tabs = useTabsStore()
 
 function handleCommand(command: string) {
   if (command === 'profile') {
@@ -66,6 +76,7 @@ function handleCommand(command: string) {
 async function handleLogout() {
   await auth.logout()
   resetDynamicRoutes()
+  tabs.reset()
   router.replace('/login')
 }
 </script>
@@ -92,7 +103,7 @@ async function handleLogout() {
 .header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
 }

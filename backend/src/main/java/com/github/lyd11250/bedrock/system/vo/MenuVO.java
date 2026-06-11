@@ -34,5 +34,8 @@ public class MenuVO {
 
     private Integer status;
 
+    /** 页面是否启用前端缓存(keep-alive)：1 是，0 否。 */
+    private Integer keepAlive;
+
     private List<MenuVO> children = new ArrayList<>();
 }

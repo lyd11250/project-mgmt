@@ -22,6 +22,13 @@
       </el-table-column>
       <el-table-column prop="perm" label="权限码" />
       <el-table-column prop="path" label="路由" />
+      <el-table-column label="缓存" width="80">
+        <template #default="{ row }">
+          <el-tag v-if="row.type === 'C'" :type="row.keepAlive === 1 ? 'success' : 'info'" size="small">
+            {{ row.keepAlive === 1 ? '是' : '否' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="sort" label="排序" />
       <el-table-column label="操作">
         <template #default="{ row }">
@@ -76,6 +83,10 @@
         </el-form-item>
         <el-form-item v-if="form.type === 'C'" label="组件">
           <el-input v-model="form.component" placeholder="如 system/UserList" />
+        </el-form-item>
+        <el-form-item v-if="form.type === 'C'" label="是否缓存">
+          <el-switch v-model="form.keepAlive" :active-value="1" :inactive-value="0" />
+          <span class="hint">开启后切换页签不丢失已填数据</span>
         </el-form-item>
         <el-form-item v-if="form.type !== 'F'" label="图标">
           <el-input v-model="form.icon" placeholder="Element Plus 图标名，如 Setting" />
@@ -159,6 +170,7 @@ const form = reactive({
   perm: '',
   sort: 0,
   visible: 1,
+  keepAlive: 0,
 })
 const rules: FormRules = {
   type: [{ required: true, message: '请选择类型', trigger: 'change' }],
@@ -176,6 +188,7 @@ function reset(parentId = '0') {
   form.perm = ''
   form.sort = 0
   form.visible = 1
+  form.keepAlive = 0
 }
 
 function openCreate() {
@@ -199,6 +212,7 @@ function openEdit(row: MenuNode) {
   form.perm = row.perm ?? ''
   form.sort = row.sort ?? 0
   form.visible = row.visible ?? 1
+  form.keepAlive = row.keepAlive ?? 0
   editVisible.value = true
 }
 
@@ -232,5 +246,10 @@ async function handleDelete(row: MenuNode) {
 }
 .full {
   width: 100%;
+}
+.hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #909399;
 }
 </style>

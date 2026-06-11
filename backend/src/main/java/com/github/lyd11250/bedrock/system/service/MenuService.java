@@ -136,6 +136,7 @@ public class MenuService {
         menu.setSort(dto.getSort() == null ? 0 : dto.getSort());
         menu.setVisible(dto.getVisible() == null ? 1 : dto.getVisible());
         menu.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
+        menu.setKeepAlive(dto.getKeepAlive() == null ? 0 : dto.getKeepAlive());
     }
 
     private SysMenu requireMenu(Long id) {
@@ -177,6 +178,7 @@ public class MenuService {
         vo.setSort(m.getSort());
         vo.setVisible(m.getVisible());
         vo.setStatus(m.getStatus());
+        vo.setKeepAlive(m.getKeepAlive());
         return vo;
     }
 }
