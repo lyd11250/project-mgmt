@@ -27,5 +27,8 @@ public class TenantVO {
     /** 订阅到期时间；null 表示永久。 */
     private LocalDateTime expireAt;
 
+    /** 是否已过期（派生字段，按 expireAt 现算，不落库）。 */
+    private Boolean expired;
+
     private LocalDateTime createdAt;
 }

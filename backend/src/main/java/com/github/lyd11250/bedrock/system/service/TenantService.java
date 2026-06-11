@@ -4,16 +4,20 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.lyd11250.bedrock.system.dto.TenantCreateDTO;
+import com.github.lyd11250.bedrock.system.dto.TenantRenewDTO;
 import com.github.lyd11250.bedrock.system.entity.SysPackage;
 import com.github.lyd11250.bedrock.system.entity.Tenant;
 import com.github.lyd11250.bedrock.system.mapper.SysPackageMapper;
 import com.github.lyd11250.bedrock.system.mapper.TenantMapper;
 import com.github.lyd11250.bedrock.system.vo.TenantVO;
 import com.github.lyd11250.bedrock.common.BusinessException;
+import com.github.lyd11250.bedrock.common.ResultCode;
+import com.github.lyd11250.bedrock.system.RbacConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +67,39 @@ public class TenantService {
         return tenant.getId();
     }
 
+    /**
+     * 续费/调整租户到期时间，可同时变更套餐。{@code expireAt} 为 null 表示设为永久；
+     * {@code changePackageId} 为 null 表示套餐不变。套餐变更后鉴权边界实时生效（无需刷会话）。
+     */
+    @Transactional
+    public void renew(Long id, TenantRenewDTO dto) {
+        Tenant tenant = tenantMapper.selectById(id);
+        if (tenant == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND.getCode(), "租户不存在");
+        }
+        // 用 update wrapper 显式 set，确保 null（设为永久）也能落库（updateById 会跳过 null 字段）
+        var update = Wrappers.<Tenant>lambdaUpdate()
+                .eq(Tenant::getId, id)
+                .set(Tenant::getExpireAt, dto.getExpireAt());
+        if (dto.getChangePackageId() != null) {
+            if (packageMapper.selectById(dto.getChangePackageId()) == null) {
+                throw new BusinessException("套餐不存在");
+            }
+            update.set(Tenant::getPackageId, dto.getChangePackageId());
+        }
+        tenantMapper.update(null, update);
+    }
+
+    /**
+     * 租户订阅是否已过期（惰性判定，不落库）。平台租户与无到期时间（永久）均视为未过期。
+     */
+    public static boolean isExpired(Tenant tenant) {
+        return tenant != null
+                && !RbacConstants.PLATFORM_TENANT_ID.equals(tenant.getId())
+                && tenant.getExpireAt() != null
+                && tenant.getExpireAt().isBefore(LocalDateTime.now());
+    }
+
     private TenantVO toVO(Tenant t, Function<Long, String> packageNameOf) {
         TenantVO vo = new TenantVO();
         vo.setId(t.getId());
@@ -73,6 +110,7 @@ public class TenantService {
         vo.setPackageName(t.getPackageId() == null ? null : packageNameOf.apply(t.getPackageId()));
         vo.setContact(t.getContact());
         vo.setExpireAt(t.getExpireAt());
+        vo.setExpired(isExpired(t));
         vo.setCreatedAt(t.getCreatedAt());
         return vo;
     }
