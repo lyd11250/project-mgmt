@@ -32,6 +32,7 @@ public class TenantService {
     private final TenantMapper tenantMapper;
     private final SysPackageMapper packageMapper;
     private final SeedService seedService;
+    private final PermissionCacheService permissionCache;
 
     public IPage<TenantVO> page(long current, long size) {
         Page<Tenant> page = tenantMapper.selectPage(Page.of(current, size),
@@ -88,6 +89,10 @@ public class TenantService {
             update.set(Tenant::getPackageId, dto.getChangePackageId());
         }
         tenantMapper.update(null, update);
+        if (dto.getChangePackageId() != null) {
+            // 套餐变更仅改变该租户的鉴权边界，只清该租户缓存（不波及其他租户）
+            permissionCache.evictTenant(id);
+        }
     }
 
     /**

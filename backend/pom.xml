@@ -43,6 +43,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- Spring Cache 抽象：为基座/业务模块提供声明式缓存能力（后端 RedisCacheManager 见 config/CacheConfig） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
 
         <!-- MyBatis-Plus（Spring Boot 4 starter） -->
         <dependency>

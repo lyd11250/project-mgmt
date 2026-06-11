@@ -35,6 +35,7 @@ public class MenuService {
     private final SysMenuMapper menuMapper;
     private final SysPackageMenuMapper packageMenuMapper;
     private final TenantMapper tenantMapper;
+    private final PermissionCacheService permissionCache;
 
     /** 全量菜单树（菜单管理用）。 */
     public List<MenuVO> tree() {
@@ -90,6 +91,7 @@ public class MenuService {
         SysMenu menu = requireMenu(id);
         apply(menu, dto);
         menuMapper.updateById(menu);
+        permissionCache.evictAll();
     }
 
     public void delete(Long id) {
@@ -98,6 +100,7 @@ public class MenuService {
             throw new BusinessException("存在子菜单，无法删除");
         }
         menuMapper.deleteById(id);
+        permissionCache.evictAll();
     }
 
     // ---- 内部 ----

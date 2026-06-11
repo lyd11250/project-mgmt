@@ -34,6 +34,7 @@ public class PackageService {
     private final SysPackageMenuMapper packageMenuMapper;
     private final SysPackageQuotaMapper packageQuotaMapper;
     private final SysQuotaDefMapper quotaDefMapper;
+    private final PermissionCacheService permissionCache;
 
     public List<PackageVO> list() {
         return packageMapper.selectList(Wrappers.<SysPackage>lambdaQuery().orderByAsc(SysPackage::getId))
@@ -72,6 +73,7 @@ public class PackageService {
         packageMapper.deleteById(id);
         packageMenuMapper.delete(Wrappers.<SysPackageMenu>lambdaQuery().eq(SysPackageMenu::getPackageId, id));
         packageQuotaMapper.delete(Wrappers.<SysPackageQuota>lambdaQuery().eq(SysPackageQuota::getPackageId, id));
+        permissionCache.evictByPackage(id);
     }
 
     public List<Long> menuIds(Long packageId) {
@@ -85,15 +87,15 @@ public class PackageService {
     public void assignMenus(Long packageId, List<Long> menuIds) {
         require(packageId);
         packageMenuMapper.delete(Wrappers.<SysPackageMenu>lambdaQuery().eq(SysPackageMenu::getPackageId, packageId));
-        if (menuIds == null) {
-            return;
+        if (menuIds != null) {
+            for (Long menuId : menuIds.stream().distinct().toList()) {
+                SysPackageMenu pm = new SysPackageMenu();
+                pm.setPackageId(packageId);
+                pm.setMenuId(menuId);
+                packageMenuMapper.insert(pm);
+            }
         }
-        for (Long menuId : menuIds.stream().distinct().toList()) {
-            SysPackageMenu pm = new SysPackageMenu();
-            pm.setPackageId(packageId);
-            pm.setMenuId(menuId);
-            packageMenuMapper.insert(pm);
-        }
+        permissionCache.evictByPackage(packageId);
     }
 
     /**

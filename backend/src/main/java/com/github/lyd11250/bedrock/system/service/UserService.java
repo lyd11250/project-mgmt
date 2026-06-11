@@ -36,6 +36,7 @@ public class UserService {
     private final SysRoleMapper roleMapper;
     private final BCryptPasswordEncoder passwordEncoder;
     private final QuotaService quotaService;
+    private final PermissionCacheService permissionCache;
 
     public IPage<UserVO> page(long current, long size, String username) {
         Page<SysUser> page = userMapper.selectPage(Page.of(current, size),
@@ -77,6 +78,7 @@ public class UserService {
         requireUser(id);
         userMapper.deleteById(id);
         userRoleMapper.delete(Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getUserId, id));
+        permissionCache.evictUserInCurrentTenant(id);
     }
 
     @Transactional
@@ -105,6 +107,7 @@ public class UserService {
             ur.setRoleId(roleId);
             userRoleMapper.insert(ur);
         }
+        permissionCache.evictUserInCurrentTenant(userId);
     }
 
     private SysUser requireUser(Long id) {

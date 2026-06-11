@@ -36,6 +36,7 @@ public class RoleService {
     private final SysUserRoleMapper userRoleMapper;
     private final SysPackageMenuMapper packageMenuMapper;
     private final TenantMapper tenantMapper;
+    private final PermissionCacheService permissionCache;
 
     public List<RoleVO> list() {
         return roleMapper.selectList(Wrappers.<SysRole>lambdaQuery().orderByAsc(SysRole::getId))
@@ -68,6 +69,7 @@ public class RoleService {
         roleMapper.deleteById(id);
         roleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, id));
         userRoleMapper.delete(Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getRoleId, id));
+        permissionCache.evictCurrentTenant();
     }
 
     public List<Long> menuIds(Long roleId) {
@@ -82,18 +84,18 @@ public class RoleService {
         require(roleId);
         Set<Long> boundary = boundaryMenuIds();
         roleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, roleId));
-        if (menuIds == null) {
-            return;
-        }
-        for (Long menuId : menuIds.stream().distinct().toList()) {
-            if (!boundary.contains(menuId)) {
-                continue;   // 越界菜单忽略
+        if (menuIds != null) {
+            for (Long menuId : menuIds.stream().distinct().toList()) {
+                if (!boundary.contains(menuId)) {
+                    continue;   // 越界菜单忽略
+                }
+                SysRoleMenu rm = new SysRoleMenu();
+                rm.setRoleId(roleId);
+                rm.setMenuId(menuId);
+                roleMenuMapper.insert(rm);
             }
-            SysRoleMenu rm = new SysRoleMenu();
-            rm.setRoleId(roleId);
-            rm.setMenuId(menuId);
-            roleMenuMapper.insert(rm);
         }
+        permissionCache.evictCurrentTenant();
     }
 
     // ---- 内部 ----
