@@ -22,6 +22,21 @@ services:
     volumes:
       - redisdata:/data
 
+  # 对象存储：MinIO（文件上传下载的存储后端，兼容 S3 协议）
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     environment:
@@ -34,11 +49,17 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-bedrock}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+      minio:
+        condition: service_healthy
 
   # 前端：容器内多阶段构建（node 构建 → nginx 托管静态资源 + 反代 /api）。
   # 构建在测试机 Docker（Linux）内进行，平台一致，规避跨平台 npm ci 的 lock 漂移；
@@ -51,3 +72,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  miniodata:

@@ -15,6 +15,9 @@ public final class QuotaKeys {
     /** 单租户最大用户数。 */
     public static final String MAX_USERS = "max_users";
 
+    /** 单租户最大存储用量（字节）。 */
+    public static final String MAX_STORAGE_BYTES = "max_storage_bytes";
+
     /** 配额未配置/不限的约定值。 */
     public static final long UNLIMITED = -1L;
 }
