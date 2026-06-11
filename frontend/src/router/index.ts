@@ -48,11 +48,13 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  // 兜底：未匹配的路径统一跳 404
+  // 兜底：未匹配的路径。注意不能用 redirect 直跳 /error/404——
+  // redirect 会在全局守卫前解析为公开页，导致刷新动态路由页时守卫被短路、
+  // 动态路由来不及挂载就落到 404。这里改为渲染组件，由守卫统一处理。
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: '/error/404',
+    component: () => import('@/views/error/Error404.vue'),
   },
 ]
 
@@ -132,9 +134,14 @@ router.beforeEach(async (to) => {
     }
   }
   // 首次进入：按菜单挂载动态路由，再重新解析当前导航
+  // （刷新动态路由页时，初次匹配会落到兜底 not-found，挂载后重新导航即可命中）
   if (!dynamicAdded) {
     setupDynamicRoutes(auth.menus)
     return to.fullPath
+  }
+  // 动态路由已就绪仍落到兜底 → 路径确实不存在，跳 404 页
+  if (to.name === 'not-found') {
+    return { name: 'error-404' }
   }
   if (to.meta.role && !auth.hasRole(to.meta.role as string)) {
     return { name: 'error-403' }
