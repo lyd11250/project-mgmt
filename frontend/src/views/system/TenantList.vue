@@ -4,28 +4,35 @@
       <el-button type="success" @click="openCreate">新建租户</el-button>
     </div>
 
-    <el-table v-loading="loading" :data="list" border stripe>
+    <el-table
+      v-loading="loading"
+      :data="list"
+      border
+      :header-cell-style="{ textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
+      stripe
+    >
       <el-table-column prop="name" label="租户名称" />
       <el-table-column prop="code" label="租户编码" />
-      <el-table-column prop="packageName" label="套餐" width="120" />
+      <el-table-column prop="packageName" label="套餐" />
       <el-table-column prop="contact" label="联系人" />
-      <el-table-column label="状态" width="90">
+      <el-table-column label="状态">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '启用' : '停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="到期时间" width="200">
+      <el-table-column label="到期时间">
         <template #default="{ row }">
           <span>{{ row.expireAt ? formatDateTime(row.expireAt) : '永久' }}</span>
           <el-tag v-if="row.expired" type="danger" size="small" class="expired-tag">已过期</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="180">
+      <el-table-column label="创建时间">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="100" fixed="right">
+      <el-table-column label="操作">
         <template #default="{ row }">
           <el-button link type="primary" @click="openRenew(row)">续费</el-button>
         </template>

@@ -11,17 +11,19 @@
       :data="tree"
       row-key="id"
       border
+      :header-cell-style="{ textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
       default-expand-all
       :tree-props="{ children: 'children' }"
     >
       <el-table-column prop="name" label="名称" />
-      <el-table-column label="类型" width="80">
+      <el-table-column label="类型">
         <template #default="{ row }">{{ typeLabel(row.type) }}</template>
       </el-table-column>
       <el-table-column prop="perm" label="权限码" />
       <el-table-column prop="path" label="路由" />
-      <el-table-column prop="sort" label="排序" width="70" />
-      <el-table-column label="操作" width="240">
+      <el-table-column prop="sort" label="排序" />
+      <el-table-column label="操作">
         <template #default="{ row }">
           <el-button
             v-if="row.type !== 'F'"

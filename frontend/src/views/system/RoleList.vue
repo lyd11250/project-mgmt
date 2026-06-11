@@ -6,10 +6,17 @@
       >
     </div>
 
-    <el-table v-loading="loading" :data="list" border stripe>
+    <el-table
+      v-loading="loading"
+      :data="list"
+      border
+      :header-cell-style="{ textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
+      stripe
+    >
       <el-table-column prop="code" label="角色码" />
       <el-table-column prop="name" label="角色名称" />
-      <el-table-column label="操作" width="280">
+      <el-table-column label="操作">
         <template #default="{ row }">
           <el-button
             v-permission="'system:role:assignMenu'"

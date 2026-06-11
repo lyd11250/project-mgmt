@@ -15,9 +15,16 @@
       >
     </div>
 
-    <el-table v-loading="loading" :data="list" border stripe>
+    <el-table
+      v-loading="loading"
+      :data="list"
+      border
+      :header-cell-style="{ textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
+      stripe
+    >
       <el-table-column prop="username" label="用户名" />
-      <el-table-column label="状态" width="90">
+      <el-table-column label="状态">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '启用' : '停用' }}
@@ -29,10 +36,10 @@
           <el-tag v-for="r in row.roles" :key="r.id" class="role-tag">{{ r.name }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="180">
+      <el-table-column label="创建时间">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="260">
+      <el-table-column label="操作">
         <template #default="{ row }">
           <el-button
             v-permission="'system:user:assignRole'"

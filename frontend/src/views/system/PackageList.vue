@@ -6,11 +6,18 @@
       >
     </div>
 
-    <el-table v-loading="loading" :data="list" border stripe>
+    <el-table
+      v-loading="loading"
+      :data="list"
+      border
+      :header-cell-style="{ textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
+      stripe
+    >
       <el-table-column prop="name" label="套餐名称" />
       <el-table-column prop="code" label="套餐编码" />
       <el-table-column prop="remark" label="说明" />
-      <el-table-column label="操作" width="320">
+      <el-table-column label="操作">
         <template #default="{ row }">
           <el-button
             v-permission="'system:package:assignMenu'"
