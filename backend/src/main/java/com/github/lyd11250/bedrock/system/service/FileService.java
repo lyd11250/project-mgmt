@@ -8,6 +8,7 @@ import com.github.lyd11250.bedrock.config.FileProperties;
 import com.github.lyd11250.bedrock.system.QuotaKeys;
 import com.github.lyd11250.bedrock.system.entity.SysFile;
 import com.github.lyd11250.bedrock.system.mapper.SysFileMapper;
+import com.github.lyd11250.bedrock.system.spi.FileBizTypeDef;
 import com.github.lyd11250.bedrock.system.storage.StorageProvider;
 import com.github.lyd11250.bedrock.system.storage.StoredObject;
 import com.github.lyd11250.bedrock.system.vo.FileVO;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,6 +37,7 @@ public class FileService {
     private final StorageProvider storageProvider;
     private final QuotaService quotaService;
     private final FileProperties fileProperties;
+    private final FileBizTypeRegistry bizTypeRegistry;
 
     /** 下载载体：元数据 + 内容流（流由调用方负责关闭）。 */
     public record DownloadFile(String originalName, String contentType, long size, InputStream content) {
@@ -106,6 +109,24 @@ public class FileService {
                         .eq(bizType != null && !bizType.isBlank(), SysFile::getBizType, bizType)
                         .orderByDesc(SysFile::getId));
         return page.convert(this::toVO);
+    }
+
+    /**
+     * 当前租户文件实有的业务类型选项（去重、非空 + 中文标签），供文件管理台筛选下拉。
+     *
+     * <p>按租户数据裁剪（多租户插件自动 {@code WHERE tenant_id=?}）：租户只会看到自己已有文件的
+     * 业务类型，套餐外的类型不会出现，杜绝跨套餐信息泄露。标签经 {@link FileBizTypeRegistry} 翻译。
+     */
+    public List<FileBizTypeDef> bizTypeOptions() {
+        return fileMapper.selectList(Wrappers.<SysFile>lambdaQuery()
+                        .select(SysFile::getBizType)
+                        .isNotNull(SysFile::getBizType)
+                        .ne(SysFile::getBizType, "")
+                        .groupBy(SysFile::getBizType))
+                .stream()
+                .map(SysFile::getBizType)
+                .map(v -> new FileBizTypeDef(v, bizTypeRegistry.labelOf(v)))
+                .toList();
     }
 
     /** 软删元数据；物理对象保留，由后续定时任务按 object_key 清理。 */

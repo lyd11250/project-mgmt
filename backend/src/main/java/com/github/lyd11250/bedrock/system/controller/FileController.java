@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.lyd11250.bedrock.common.Result;
 import com.github.lyd11250.bedrock.system.service.FileService;
+import com.github.lyd11250.bedrock.system.spi.FileBizTypeDef;
 import com.github.lyd11250.bedrock.system.vo.FileVO;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * 文件上传下载接口（基座通用能力）。下载为二进制流，不走统一 {@code Result} 包装。
@@ -40,6 +42,12 @@ public class FileController {
                                       @RequestParam(defaultValue = "10") long size,
                                       @RequestParam(required = false) String bizType) {
         return Result.ok(fileService.page(current, size, bizType));
+    }
+
+    @GetMapping("/biz-types")
+    @SaCheckPermission("system:file:list")
+    public Result<List<FileBizTypeDef>> bizTypes() {
+        return Result.ok(fileService.bizTypeOptions());
     }
 
     @PostMapping

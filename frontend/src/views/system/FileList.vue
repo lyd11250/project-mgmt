@@ -9,6 +9,20 @@
       >
         <el-button type="success" :loading="uploading">上传文件</el-button>
       </el-upload>
+      <el-select
+        v-model="bizTypeFilter"
+        clearable
+        placeholder="全部业务类型"
+        class="biz-filter"
+        @change="onFilterChange"
+      >
+        <el-option
+          v-for="opt in bizTypeOptions"
+          :key="opt.value"
+          :label="opt.label"
+          :value="opt.value"
+        />
+      </el-select>
     </div>
 
     <el-table
@@ -21,8 +35,25 @@
     >
       <el-table-column prop="originalName" label="文件名" min-width="200" show-overflow-tooltip />
       <el-table-column prop="contentType" label="类型" min-width="160" show-overflow-tooltip />
+      <el-table-column label="业务类型" min-width="140" show-overflow-tooltip>
+        <template #default="{ row }">{{ bizTypeLabel(row.bizType) }}</template>
+      </el-table-column>
       <el-table-column label="大小" width="120">
         <template #default="{ row }">{{ formatSize(row.sizeBytes) }}</template>
+      </el-table-column>
+      <el-table-column label="预览" width="100">
+        <template #default="{ row }">
+          <el-button
+            v-if="isPreviewable(row.contentType)"
+            v-permission="'system:file:download'"
+            link
+            type="primary"
+            @click="handlePreview(row)"
+          >
+            预览
+          </el-button>
+          <span v-else class="muted">—</span>
+        </template>
       </el-table-column>
       <el-table-column label="上传时间" width="180">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
@@ -66,8 +97,12 @@ import { ElMessage, ElMessageBox, type UploadRequestOptions } from 'element-plus
 import {
   deleteFile,
   downloadFile,
+  getFileBizTypes,
+  isPreviewable,
   pageFiles,
+  previewFile,
   uploadFile,
+  type BizTypeOption,
   type FileItem,
 } from '@/api/file'
 import { formatDateTime } from '@/utils/time'
@@ -78,11 +113,23 @@ const list = ref<FileItem[]>([])
 const total = ref(0)
 const current = ref(1)
 const size = ref(10)
+const bizTypeFilter = ref('')
+const bizTypeOptions = ref<BizTypeOption[]>([])
+
+/** 业务类型技术串 → 中文标签；未登记或空值回退展示。 */
+function bizTypeLabel(value?: string): string {
+  if (!value) return '-'
+  return bizTypeOptions.value.find((o) => o.value === value)?.label ?? value
+}
 
 async function load() {
   loading.value = true
   try {
-    const page = await pageFiles({ current: current.value, size: size.value })
+    const page = await pageFiles({
+      current: current.value,
+      size: size.value,
+      bizType: bizTypeFilter.value || undefined,
+    })
     list.value = page.records
     total.value = Number(page.total)
   } finally {
@@ -90,7 +137,19 @@ async function load() {
   }
 }
 
-onMounted(load)
+async function loadBizTypes() {
+  bizTypeOptions.value = await getFileBizTypes()
+}
+
+onMounted(() => {
+  load()
+  loadBizTypes()
+})
+
+function onFilterChange() {
+  current.value = 1
+  load()
+}
 
 function onPageChange(p: number) {
   current.value = p
@@ -105,6 +164,7 @@ async function customUpload(options: UploadRequestOptions) {
     ElMessage.success('上传成功')
     current.value = 1
     await load()
+    await loadBizTypes()
   } finally {
     uploading.value = false
   }
@@ -114,11 +174,16 @@ function handleDownload(row: FileItem) {
   downloadFile(row.id, row.originalName)
 }
 
+function handlePreview(row: FileItem) {
+  previewFile(row.id)
+}
+
 async function handleDelete(row: FileItem) {
   await ElMessageBox.confirm(`确认删除文件「${row.originalName}」？`, '提示', { type: 'warning' })
   await deleteFile(row.id)
   ElMessage.success('删除成功')
   await load()
+  await loadBizTypes()
 }
 
 /** 人类可读的文件大小。 */
@@ -139,6 +204,15 @@ function formatSize(bytes: number): string {
 <style scoped>
 .toolbar {
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.biz-filter {
+  width: 200px;
+}
+.muted {
+  color: var(--el-text-color-placeholder);
 }
 .pager {
   margin-top: 12px;

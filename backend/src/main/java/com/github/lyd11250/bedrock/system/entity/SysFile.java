@@ -31,6 +31,6 @@ public class SysFile extends BaseEntity {
     /** 内容 SHA-256 指纹。 */
     private String sha256;
 
-    /** 业务归类（上层模块自定义，如 party:attachment）。 */
+    /** 业务归类（上层模块自定义，三段式 模块:资源:文件用途，如 system:user:avatar、party:person:idcard）。 */
     private String bizType;
 }
