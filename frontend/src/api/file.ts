@@ -78,6 +78,20 @@ export function isPreviewable(contentType?: string): boolean {
   )
 }
 
+/** 是否为图片类型（用于列表缩略图渲染）。 */
+export function isImage(contentType?: string): boolean {
+  return !!contentType && contentType.startsWith('image/')
+}
+
+/**
+ * 取文件的 blob 对象 URL，供 el-image 缩略图/放大预览使用。
+ * 下载接口需令牌头，img 标签直链无法携带，故先取 blob 再生成本地 URL（用后需 revoke）。
+ */
+export async function fetchFileObjectUrl(id: string): Promise<string> {
+  const res = await rawDownload.get(`/system/files/${id}`)
+  return URL.createObjectURL(res.data as Blob)
+}
+
 /**
  * 在新标签页预览文件。先同步开窗（避开浏览器弹窗拦截），再把取到的 blob 链接喂给该窗口。
  * blob: 链接为本地资源，下载接口的 attachment 头不影响其内联渲染，浏览器按 MIME 展示。

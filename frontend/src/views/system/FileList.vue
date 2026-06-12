@@ -33,6 +33,19 @@
       :cell-style="{ textAlign: 'center' }"
       stripe
     >
+      <el-table-column label="预览" width="90">
+        <template #default="{ row }">
+          <el-image
+            v-if="isImage(row.contentType) && imageUrls[row.id]"
+            :src="imageUrls[row.id]"
+            :preview-src-list="[imageUrls[row.id]]"
+            preview-teleported
+            fit="cover"
+            class="thumb"
+          />
+          <el-icon v-else class="type-icon"><component :is="fileIcon(row.contentType)" /></el-icon>
+        </template>
+      </el-table-column>
       <el-table-column prop="originalName" label="文件名" min-width="200" show-overflow-tooltip />
       <el-table-column prop="contentType" label="类型" min-width="160" show-overflow-tooltip />
       <el-table-column label="业务类型" min-width="140" show-overflow-tooltip>
@@ -40,20 +53,6 @@
       </el-table-column>
       <el-table-column label="大小" width="120">
         <template #default="{ row }">{{ formatSize(row.sizeBytes) }}</template>
-      </el-table-column>
-      <el-table-column label="预览" width="100">
-        <template #default="{ row }">
-          <el-button
-            v-if="isPreviewable(row.contentType)"
-            v-permission="'system:file:download'"
-            link
-            type="primary"
-            @click="handlePreview(row)"
-          >
-            预览
-          </el-button>
-          <span v-else class="muted">—</span>
-        </template>
       </el-table-column>
       <el-table-column label="上传时间" width="180">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
@@ -92,15 +91,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from 'element-plus'
 import {
   deleteFile,
   downloadFile,
+  fetchFileObjectUrl,
   getFileBizTypes,
-  isPreviewable,
+  isImage,
   pageFiles,
-  previewFile,
   uploadFile,
   type BizTypeOption,
   type FileItem,
@@ -115,6 +114,39 @@ const current = ref(1)
 const size = ref(10)
 const bizTypeFilter = ref('')
 const bizTypeOptions = ref<BizTypeOption[]>([])
+/** 图片缩略图的 blob 对象 URL，按文件 id 缓存（重载/卸载时统一 revoke）。 */
+const imageUrls = ref<Record<string, string>>({})
+
+/** 按 MIME 选择类型图标（全局已注册 Element Plus 图标，按名引用）。 */
+function fileIcon(contentType?: string): string {
+  if (!contentType) return 'Document'
+  if (contentType.startsWith('video/')) return 'VideoCamera'
+  if (contentType.startsWith('audio/')) return 'Headset'
+  if (contentType === 'application/pdf' || contentType.startsWith('text/')) return 'Document'
+  if (contentType.includes('zip') || contentType.includes('compressed')) return 'Files'
+  return 'Document'
+}
+
+/** 释放已生成的缩略图对象 URL，避免内存泄漏。 */
+function revokeThumbnails() {
+  for (const url of Object.values(imageUrls.value)) URL.revokeObjectURL(url)
+  imageUrls.value = {}
+}
+
+/** 为当前页的图片文件并发拉取缩略图 blob；单个失败回退为图标。 */
+async function loadThumbnails() {
+  revokeThumbnails()
+  const images = list.value.filter((f) => isImage(f.contentType))
+  await Promise.all(
+    images.map(async (f) => {
+      try {
+        imageUrls.value[f.id] = await fetchFileObjectUrl(f.id)
+      } catch {
+        // 单个缩略图加载失败忽略，列内回退展示类型图标
+      }
+    }),
+  )
+}
 
 /** 业务类型技术串 → 中文标签；未登记或空值回退展示。 */
 function bizTypeLabel(value?: string): string {
@@ -132,6 +164,7 @@ async function load() {
     })
     list.value = page.records
     total.value = Number(page.total)
+    await loadThumbnails()
   } finally {
     loading.value = false
   }
@@ -144,6 +177,10 @@ async function loadBizTypes() {
 onMounted(() => {
   load()
   loadBizTypes()
+})
+
+onUnmounted(() => {
+  revokeThumbnails()
 })
 
 function onFilterChange() {
@@ -172,10 +209,6 @@ async function customUpload(options: UploadRequestOptions) {
 
 function handleDownload(row: FileItem) {
   downloadFile(row.id, row.originalName)
-}
-
-function handlePreview(row: FileItem) {
-  previewFile(row.id)
 }
 
 async function handleDelete(row: FileItem) {
@@ -211,8 +244,15 @@ function formatSize(bytes: number): string {
 .biz-filter {
   width: 200px;
 }
-.muted {
-  color: var(--el-text-color-placeholder);
+.thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.type-icon {
+  font-size: 28px;
+  color: var(--el-text-color-secondary);
 }
 .pager {
   margin-top: 12px;
