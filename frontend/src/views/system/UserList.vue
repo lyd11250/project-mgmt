@@ -23,6 +23,13 @@
       :cell-style="{ textAlign: 'center' }"
       stripe
     >
+      <el-table-column label="头像" width="80">
+        <template #default="{ row }">
+          <el-avatar :size="36" :src="avatarUrls[row.id] || undefined">
+            <el-icon><Avatar /></el-icon>
+          </el-avatar>
+        </template>
+      </el-table-column>
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="phone" label="手机号" />
@@ -126,12 +133,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { Avatar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   assignRoles,
   createUser,
   deleteUser,
+  fetchAvatarObjectUrl,
   pageUsers,
   resetPassword,
   type UserItem,
@@ -156,18 +165,43 @@ async function ensureRoles() {
   rolesLoaded.value = true
 }
 
+// 各行头像的 objectURL（按 userId）。<img> 直链无法带令牌，故逐行拉 blob 转 URL。
+const avatarUrls = reactive<Record<string, string>>({})
+
+function revokeAvatars() {
+  for (const key of Object.keys(avatarUrls)) {
+    URL.revokeObjectURL(avatarUrls[key])
+    delete avatarUrls[key]
+  }
+}
+
+/** 为当前页中设置了头像的用户拉取 objectURL。 */
+async function loadAvatars() {
+  revokeAvatars()
+  await Promise.all(
+    list.value
+      .filter((u) => u.avatarFileId)
+      .map(async (u) => {
+        const url = await fetchAvatarObjectUrl(u.id)
+        if (url) avatarUrls[u.id] = url
+      }),
+  )
+}
+
 async function load() {
   loading.value = true
   try {
     const res = await pageUsers(query)
     list.value = res.records
     total.value = res.total
+    await loadAvatars()
   } finally {
     loading.value = false
   }
 }
 
 onMounted(load)
+onBeforeUnmount(revokeAvatars)
 
 // ---- 新建用户 ----
 const createVisible = ref(false)

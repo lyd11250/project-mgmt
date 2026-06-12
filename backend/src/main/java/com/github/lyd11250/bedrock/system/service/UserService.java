@@ -218,6 +218,7 @@ public class UserService {
         vo.setNickname(user.getNickname());
         vo.setPhone(user.getPhone());
         vo.setStatus(user.getStatus());
+        vo.setAvatarFileId(user.getAvatarFileId());
         vo.setCreatedAt(user.getCreatedAt());
         vo.setRoles(rolesOf(user.getId()));
         return vo;

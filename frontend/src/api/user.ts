@@ -20,6 +20,7 @@ export interface UserItem {
   nickname?: string
   phone?: string
   status: number
+  avatarFileId?: string
   roles: Role[]
   createdAt: string
 }

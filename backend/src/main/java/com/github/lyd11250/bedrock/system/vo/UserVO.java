@@ -21,6 +21,9 @@ public class UserVO {
 
     private Integer status;
 
+    /** 当前头像文件 id（空=未设置）；前端据此拉取头像。 */
+    private Long avatarFileId;
+
     private List<RoleVO> roles;
 
     private LocalDateTime createdAt;
